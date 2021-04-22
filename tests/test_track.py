@@ -104,7 +104,7 @@ def test_filter_area():
     
     assert min_area == 3413.0
     assert all([i in labels_greater_minsize for i in [1,4]])
-    assert (area.label[area>=min_area] == labels_greater_minsize).all()
+    assert (area.label[area>=min_area].values == np.unique(labels_greater_minsize[labels_greater_minsize>0])).all()
     
     
 def test_wrap():

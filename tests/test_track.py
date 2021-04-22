@@ -121,11 +121,19 @@ def test_wrap():
     assert np.max(out_labels) == 2
 
 
-def test_track():
+@pytest.mark.parametrize("radius", [8, 10])
+@pytest.mark.parametrize("area_quantile", [0.75, 0.80])
+def test_track(radius, area_quantile):
     Anom, mask = example_anomaly_data()
     Anom_dask = Anom.chunk({'time': 1})
-    new_labels = track(Anom, mask, radius=8, area_quantile=0.75)
+    new_labels = track(Anom, mask, radius=radius, area_quantile=area_quantile)
     
-    assert new_labels.min_area == 3413.0
-    assert new_labels.percent_area_kept == 0.7871754847190273
+    assert (new_labels.percent_area_reject + new_labels.percent_area_accept) == 1.0
+
+    props = regionprops(new_labels.astype('int'))
+    labelprops = [p.label for p in props]
+    labelprops = xr.DataArray(labelprops, dims=['label'], coords={'label': labelprops}) 
+    area = xr.DataArray([p.area for p in props], dims=['label'], coords={'label': labelprops}) 
+    
+    assert area.min() >= new_labels.min_area
     

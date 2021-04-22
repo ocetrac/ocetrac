@@ -157,13 +157,19 @@ def track(da, mask, radius=8, area_quantile=0.75):
     
     # Calculate Percent of total object area retained after size filtering
     sum_tot_area = int(np.sum(area.values))
+    
     reject_area = area.where(area<=min_area, drop=True)
     sum_reject_area = int(np.sum(reject_area.values))
-    percent_area_kept = 1-(sum_reject_area/sum_tot_area)
+    percent_area_reject = (sum_reject_area/sum_tot_area)
+    
+    accept_area = area.where(area>min_area, drop=True)
+    sum_accept_area = int(np.sum(accept_area.values))
+    percent_area_accept = (sum_accept_area/sum_tot_area)
 
     new_labels = new_labels.rename('labels')
     new_labels.attrs['min_area'] = min_area
-    new_labels.attrs['percent_area_kept'] = percent_area_kept
+    new_labels.attrs['percent_area_reject'] = percent_area_reject
+    new_labels.attrs['percent_area_accept'] = percent_area_accept
     
     print('inital objects identified \t', int(labels.max()))
     print('final objects tracked \t', int(N))

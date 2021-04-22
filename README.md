@@ -8,7 +8,4 @@ ocetrac
 
 Label and track unique geospatial features from gridded datasets
 
---------
 
-<p><small>Project based on the <a target="_blank" href="https://github.com/jbusecke/cookiecutter-science-project">cookiecutter science project template</a>.</small></p>
-# ocetrac

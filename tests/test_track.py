@@ -101,7 +101,6 @@ def test_filter_area():
     
     min_size_quartile = .75
     area, min_area, labels_greater_minsize, labelprops = _filter_area(labels, min_size_quartile)
-    labels_greater_minsize = labelprops.where(area>=min_area, drop=True)
     
     assert min_area == 3413.0
     assert all([i in labels_greater_minsize for i in [1,4]])
@@ -116,7 +115,6 @@ def test_wrap():
     labels, num = _label_either(binary_images_with_mask, return_num= True, connectivity=3)
     min_size_quartile = .75
     area, min_area, labels_greater_minsize, labelprops = _filter_area(labels, min_size_quartile)
-    labels_greater_minsize = labelprops.where(area>=min_area, drop=True)
     
     out_labels, N = _wrap(labels_greater_minsize)
     

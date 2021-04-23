@@ -5,7 +5,6 @@
 
 Ocetrac
 =======================================
-
 Label and track unique geospatial features from gridded datasets
 ~~~~~~
 .. image:: https://github.com/ocetrac/ocetrac/workflows/Tests/badge.svg
@@ -23,23 +22,25 @@ Label and track unique geospatial features from gridded datasets
 .. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
    :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
   
-  
-Welcome to the documentation page for Ocetrac! Here you will find instructions on how to install and use the API. Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events from gridded data. Some examples of oceanograpohic extremes could include marine heatwaves, salinity anomalies, hypoxia, or high acidity. Extreme values are first identified by the user using a criteria appropriate for the data and application. Ocetrac then treats this data as a stack of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space. 
+
+| **Welcome to the documentation page for Ocetrac!** Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events in gridded data. Here you will find instructions on how to install Ocetrac, use it's API, and contribute to future releases.  
 
 .. toctree::
    :maxdepth: 1
 
    install
-   new_section
-   new_section_notebook
    api
+   contribute
 
+| **How does it work?** Extreme values are first identified in the dataset by the user using a criteria appropriate for the data and application. Some examples of *oceanographic* use cases could include marine heatwaves (example below), salinity anomalies, hypoxia, or high acidity events. Ocetrac treats these data as stacks of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space.
 
+.. image:: _static/ocetrac_flowchart.png
+   :width: 600 px
+   :align: center
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 1
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   marine_heatwave_example
+
 

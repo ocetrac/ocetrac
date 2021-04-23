@@ -1,0 +1,31 @@
+package:
+  name: "ocetrac"
+  version: "0.1.1"
+
+source:
+  git_rev: v0.1.1
+  git_url: https://github.com/ocetrac/ocetrac
+
+requirements:
+  host:
+    - python
+    - setuptools
+  build:
+    - python
+  run:
+    - python
+    - xarray
+    - dask
+    - scipy
+    - scikit-image
+
+about:
+  home: https://github.com/ocetrac/ocetrac
+  license: MIT
+  license_familY: MIT
+  license_file: LICENSE
+  summary: "Label and track unique geospatial features from gridded datasets"
+
+extra:
+  recipe-maintainers:
+    - ocetrac

@@ -5,7 +5,7 @@ Installation
 Requirements
 ~~~~~~
 
-The only requirement is Python >=3.6. Other dependencies include
+The only requirement is Python >=3.6. The following dependencies will be installed
 
 * `xarray`_ 
 * `dask`_

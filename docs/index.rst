@@ -5,7 +5,6 @@
 
 Ocetrac
 =======================================
-
 .. image:: https://github.com/ocetrac/ocetrac/workflows/Tests/badge.svg
    :target: https://github.com/ocetrac/ocetrac/actions
 
@@ -21,10 +20,11 @@ Ocetrac
 .. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
    :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
   
-Welcome to the documentation page for Ocetrac! Here you will find instructions on how to install and use the API. Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events from gridded data. Some oceanograpohic extremes include marine heatwaves, salinity anomalies, hypoxia, and high acidity. Extreme values are first identified by the user using a criteria appropriate for the data and application. Ocetrac then treats this data as a stack of still frame images to identify and label coherent object. It then stitches these fames together to track the evolution of these objects in time and space. 
+  
+Welcome to the documentation page for Ocetrac! Here you will find instructions on how to install and use the API. Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events from gridded data. Some examples of oceanograpohic extremes could include marine heatwaves, salinity anomalies, hypoxia, or high acidity. Extreme values are first identified by the user using a criteria appropriate for the data and application. Ocetrac then treats this data as a stack of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space. 
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
    install
    new_section

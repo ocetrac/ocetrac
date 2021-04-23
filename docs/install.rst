@@ -22,8 +22,7 @@ Instructions
 
 .. role:: bash(code)
    :language: bash
-   
-Ocetrac is available on PyPI. The easiest way to install it is with pip:
+We are currently working to make Ocetrac available on Conda-Forge. For now the easiest way to install it is with pip:
 
 .. code-block:: bash
 

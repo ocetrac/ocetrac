@@ -21,7 +21,10 @@ Label and track unique geospatial features from gridded datasets
    
 .. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
    :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
-  
+   
+.. image:: https://img.shields.io/conda/dn/conda-forge/ocetrac?label=conda-forge
+   :target: https://anaconda.org/conda-forge/ocetrac
+
 
 | **Welcome to the documentation page for Ocetrac!** Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events in gridded data. Here you will find instructions on how to install Ocetrac, use it's API, and contribute to future releases.  
 
@@ -30,7 +33,7 @@ Label and track unique geospatial features from gridded datasets
 
    install
    api
-   contribute
+   dev
 
 | **How does it work?** Extreme values are first identified in the dataset by the user using a criteria appropriate for the data and application. Some examples of *oceanographic* use cases could include marine heatwaves (example below), salinity anomalies, hypoxia, or high acidity events. Ocetrac treats these data as stacks of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space.
 

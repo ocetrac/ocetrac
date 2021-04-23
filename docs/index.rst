@@ -26,7 +26,8 @@ Label and track unique geospatial features from gridded datasets
    :target: https://anaconda.org/conda-forge/ocetrac
 
 
-| **Welcome to the documentation page for Ocetrac!** Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events in gridded data. Here you will find instructions on how to install Ocetrac, use it's API, and contribute to future releases.  
+| **Welcome to the documentation page for Ocetrac!** 
+| Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events in gridded data. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.  
 
 .. toctree::
    :maxdepth: 1
@@ -35,15 +36,18 @@ Label and track unique geospatial features from gridded datasets
    api
    dev
 
-| **How does it work?** Extreme values are first identified in the dataset by the user using a criteria appropriate for the data and application. Some examples of *oceanographic* use cases could include marine heatwaves (example below), salinity anomalies, hypoxia, or high acidity events. Ocetrac treats these data as stacks of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space.
+| **How does it work?** 
+| Extreme values are first identified in the dataset by the user using a criteria appropriate for the data and application. Some examples of *oceanographic* use cases could include marine heatwaves (example below), salinity anomalies, hypoxia, or high acidity events. Ocetrac treats these data as stacks of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space.
 
-.. image:: _static/ocetrac_flowchart.png
-   :width: 600 px
-   :align: center
+| **Examples:**
 
 .. toctree::
    :maxdepth: 1
 
    marine_heatwave_example
+   
+.. image:: _static/ocetrac_flowchart.png
+   :width: 600 px
+   :align: center
 
 

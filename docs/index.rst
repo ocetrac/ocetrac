@@ -3,19 +3,30 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to ocetrac's documentation!
+Ocetrac
 =======================================
 
-This is an awesome description of ocetrac, written in `reStructuredText`_.
+.. image:: https://github.com/ocetrac/ocetrac/workflows/Tests/badge.svg
+   :target: https://github.com/ocetrac/ocetrac/actions
 
-You can contribute new sections by either adding a new file (see ``new_section.rst``) or just putting a jupyter notebook
-in the ``docs`` folder (see ``new_section_notebook.ipynb``).
+.. image:: https://codecov.io/gh/ocetrac/ocetrac/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/ocetrac/ocetrac
+   
+.. image:: https://img.shields.io/badge/License-MIT-lightgray.svg?style=flt-square
+   :target: https://opensource.org/licenses/MIT
 
-In either case, make sure to add an entry in the ``.. toctree::``. Check out ``index.rst`` how it was done for the above examples.
+.. image:: https://img.shields.io/pypi/v/ocetrac.svg
+   :target: https://pypi.org/project/ocetrac
+   
+.. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
+   :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
+  
+Welcome to the documentation page for Ocetrac! Here you will find instructions on how to install and use the API. Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events from gridded data. Some oceanograpohic extremes include marine heatwaves, salinity anomalies, hypoxia, and high acidity. Extreme values are first identified by the user using a criteria appropriate for the data and application. Ocetrac then treats this data as a stack of still frame images to identify and label coherent object. It then stitches these fames together to track the evolution of these objects in time and space. 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
+   install
    new_section
    new_section_notebook
    api
@@ -29,4 +40,3 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html

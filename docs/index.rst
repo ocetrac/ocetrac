@@ -5,6 +5,9 @@
 
 Ocetrac
 =======================================
+
+Label and track unique geospatial features from gridded datasets
+~~~~~~
 .. image:: https://github.com/ocetrac/ocetrac/workflows/Tests/badge.svg
    :target: https://github.com/ocetrac/ocetrac/actions
 

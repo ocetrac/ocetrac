@@ -45,13 +45,50 @@ def _morphological_operations(da, radius=8):
                                vectorize=True,
                                dask='parallelized')
     
-    
     return mo_binary
 
 def _apply_mask(mask, binary_images):
     binary_images_with_mask = binary_images.where(mask==1, drop=False, other=0)
     return binary_images_with_mask
 
+
+def _filter_area(binary_images, min_size_quartile):
+    '''calculatre area with regionprops'''
+    
+    def get_labels(binary_images):
+        blobs_labels = _label_either(binary_images, background=0)
+        return blobs_labels
+    
+    labels = xr.apply_ufunc(get_labels, binary_images,
+                            input_core_dims=[['lat', 'lon']],
+                            output_core_dims=[['lat', 'lon']],
+                            output_dtypes=[binary_images.dtype],
+                            vectorize=True,
+                            dask='parallelized')
+    
+    labels = labels.where(labels>0, drop=False, other=np.nan)  
+    
+    # The labels are repeated each time step, therefore we relabel them to be consecutive
+    for i in range(1, labels.shape[0]):
+        labels[i,:,:].values = labels[i,:,:].values + labels[i-1,:,:].max().values
+    
+    N_initial = labels.max()
+    
+    # Calculate Area of each object and keep objects larger than threshold
+    props = regionprops(labels.astype('int'))
+    labelprops = [p.label for p in props]
+    labelprops = xr.DataArray(labelprops, dims=['label'], coords={'label': labelprops}) 
+    area = xr.DataArray([p.area for p in props], dims=['label'], coords={'label': labelprops})  # Number of pixels of the region.
+    min_area = np.percentile(area, min_size_quartile*100)
+    print('minimum area: ', min_area) 
+    keep_labels = labelprops.where(area>=min_area, drop=True)
+    keep_where = np.isin(labels, keep_labels)
+    out_labels = xr.DataArray(np.where(keep_where==False, 0, labels), dims=da.dims, coords=da.coords)
+    
+    # Convert images to binary. All positive values == 1, otherwise == 0
+    binary_labels = out_labels.where(out_labels==0, drop=False, other=1)
+        
+    return area, min_area, binary_labels, N_initial
 
 
 def _label_either(data, **kwargs):
@@ -69,22 +106,6 @@ def _label_either(data, **kwargs):
     else:
         label_func = label_np
     return label_func(data, **kwargs)
-
-
-def _filter_area(labels, min_size_quartile):
-    '''calculatre area with regionprops'''
-    
-    props = regionprops(labels.astype('int'))
-    labelprops = [p.label for p in props]
-    labelprops = xr.DataArray(labelprops, dims=['label'], coords={'label': labelprops}) 
-    area = xr.DataArray([p.area for p in props], dims=['label'], coords={'label': labelprops})  # Number of pixels of the region.
-    min_area = np.percentile(area, min_size_quartile*100)
-    keep_labels = labelprops.where(area>=min_area, drop=True)
-    keep_where = np.isin(labels, keep_labels)
-    labels_greater_minsize = np.where(keep_where==False, 0, labels)
-    print('minimum area: ', min_area)  
-    
-    return area, min_area, labels_greater_minsize, labelprops
 
 
 def _wrap(labels):
@@ -111,7 +132,7 @@ def _wrap(labels):
     return labels_wrapped, N
 
 
-def track(da, mask, radius=8, area_quantile=0.75):
+def track(da, mask, radius=8, min_size_quartile=0.75):
     '''Image labeling and tracking.
     
     Parameters
@@ -135,23 +156,24 @@ def track(da, mask, radius=8, area_quantile=0.75):
     '''
         
     # Convert data to binary, define structuring element, and perform morphological closing then opening
-    binary_images = _morphological_operations(da, radius=8)
+    binary_images = _morphological_operations(da, radius=radius)
     
     # Apply mask
     binary_images_with_mask  = _apply_mask(mask, binary_images)
     
-    # Label objects
-    labels, num = _label_either(binary_images_with_mask, return_num= True, connectivity=3)
-    
     # Filter area
-    area, min_area, labels_greater_minsize, labelprops = _filter_area(labels, area_quantile)
+    area, min_area, binary_labels, N_initial = _filter_area(binary_images_with_mask, min_size_quartile)
+    
+    # Label objects
+    labels, num = _label_either(binary_labels, return_num= True, connectivity=3)
     
     # Wrap labels
-    labels_wrapped, N = _wrap(labels_greater_minsize)
+    labels_wrapped, N_final = _wrap(labels)
     
     # Final labels to DataArray
     new_labels = xr.DataArray(labels_wrapped, dims=da.dims, coords=da.coords)   
-    
+    new_labels = new_labels.where(new_labels!=0, drop=False, other=np.nan)
+
     
     ## Metadata
     
@@ -167,12 +189,15 @@ def track(da, mask, radius=8, area_quantile=0.75):
     percent_area_accept = (sum_accept_area/sum_tot_area)
 
     new_labels = new_labels.rename('labels')
-    new_labels.attrs['min_area'] = min_area
-    new_labels.attrs['percent_area_reject'] = percent_area_reject
-    new_labels.attrs['percent_area_accept'] = percent_area_accept
+    new_labels.attrs['inital objects identified'] = int(N_initial)
+    new_labels.attrs['final objects tracked'] = int(N_final)
+    new_labels.attrs['radius'] = radius
+    new_labels.attrs['size quantile threshold'] = min_size_quartile
+    new_labels.attrs['min area'] = min_area
+    new_labels.attrs['percent area reject'] = percent_area_reject
+    new_labels.attrs['percent area accept'] = percent_area_accept
     
-    print('inital objects identified \t', int(labels.max()))
-    print('final objects tracked \t', int(N))
+    print('inital objects identified \t', int(N_initial))
+    print('final objects tracked \t', int(N_final))
     
     return new_labels
-

@@ -5,8 +5,6 @@ from skimage.measure import regionprops
 from skimage.measure import label as label_np
 import dask.array as dsa
 
-
-
 def _morphological_operations(da, radius=8): 
     '''Converts xarray.DataArray to binary, defines structuring element, and performs morphological closing then opening.
     Parameters
@@ -66,24 +64,27 @@ def _filter_area(binary_images, min_size_quartile):
                             vectorize=True,
                             dask='parallelized')
     
+    
+    labels = xr.DataArray(labels, dims=binary_images.dims, coords=binary_images.coords)
     labels = labels.where(labels>0, drop=False, other=np.nan)  
     
     # The labels are repeated each time step, therefore we relabel them to be consecutive
     for i in range(1, labels.shape[0]):
-        labels[i,:,:].values = labels[i,:,:].values + labels[i-1,:,:].max().values
+        labels[i,:,:] = labels[i,:,:].values + labels[i-1,:,:].max().values
     
-    N_initial = labels.max()
+    labels = labels.where(labels>0, drop=False, other=0)  
+    labels_wrapped, N_initial = _wrap(np.array(labels))
     
     # Calculate Area of each object and keep objects larger than threshold
-    props = regionprops(labels.astype('int'))
+    props = regionprops(labels_wrapped.astype('int'))
     labelprops = [p.label for p in props]
     labelprops = xr.DataArray(labelprops, dims=['label'], coords={'label': labelprops}) 
     area = xr.DataArray([p.area for p in props], dims=['label'], coords={'label': labelprops})  # Number of pixels of the region.
     min_area = np.percentile(area, min_size_quartile*100)
     print('minimum area: ', min_area) 
     keep_labels = labelprops.where(area>=min_area, drop=True)
-    keep_where = np.isin(labels, keep_labels)
-    out_labels = xr.DataArray(np.where(keep_where==False, 0, labels), dims=da.dims, coords=da.coords)
+    keep_where = np.isin(labels_wrapped, keep_labels)
+    out_labels = xr.DataArray(np.where(keep_where==False, 0, labels_wrapped), dims=binary_images.dims, coords=binary_images.coords)
     
     # Convert images to binary. All positive values == 1, otherwise == 0
     binary_labels = out_labels.where(out_labels==0, drop=False, other=1)

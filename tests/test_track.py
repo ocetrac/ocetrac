@@ -7,14 +7,6 @@ from ocetrac.track import (
     track,
 )
 
-import pytest
-import xarray as xr
-import numpy as np
-import scipy.ndimage
-from skimage.measure import regionprops 
-from skimage.measure import label as label_np
-import dask.array as dsa
-
 def example_anomaly_data():
     x0 = [180, 225, 360, 80, 1, 360, 1]
     y0 = [0, 20, -50, 40, -50, 40, 40]
@@ -86,8 +78,8 @@ def test_filter_area():
     min_size_quartile = .75
     area, min_area, binary_labels, N_initial = _filter_area(binary_images_with_mask, min_size_quartile)
     
-    assert min_area == 2761.5
-    assert N_initial.astype(int) == 15
+    assert min_area == 3853.5
+    assert N_initial.astype(int) == 12
 
 
 def test_label_either():

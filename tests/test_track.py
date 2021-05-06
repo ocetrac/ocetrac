@@ -120,7 +120,7 @@ def test_wrap():
 
 @pytest.mark.parametrize("radius", [8, 10])
 @pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
-def test_track(radius, area_quantile):
+def test_track(radius, min_size_quartile):
     Anom, mask = example_anomaly_data()
     Anom_dask = Anom.chunk({'time': 1})
     new_labels = track(Anom, mask, radius=radius, min_size_quartile=min_size_quartile)

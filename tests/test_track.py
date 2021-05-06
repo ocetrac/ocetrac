@@ -7,6 +7,14 @@ from ocetrac.track import (
     track,
 )
 
+import pytest
+import xarray as xr
+import numpy as np
+import scipy.ndimage
+from skimage.measure import regionprops 
+from skimage.measure import label as label_np
+import dask.array as dsa
+
 def example_anomaly_data():
     x0 = [180, 225, 360, 80, 1, 360, 1]
     y0 = [0, 20, -50, 40, -50, 40, 40]

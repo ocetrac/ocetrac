@@ -41,73 +41,66 @@ class ocetrac:
         self.radius = radius
         self.min_size_quartile = min_size_quartile
         self.xdim = xdim
-        self.ydim = ydim
-    
-    def track(self):
-        """Run the model forward without stopping until the end."""
-    def myfunc(self):
-        print("Hello my name is " + self.name)
-            
-            
+        self.ydim = ydim   
             
     def track(self):
-    '''Label and track image features.
-        
-    Returns
-    -------
-    labels : xarray.DataArray
-        Integer labels of the connected regions.
-    '''
-        
-    if (mask == 0).all():
-        raise ValueError('Found only zeros in `mask` input. The mask should indicate valid regions with values of 1')
-        
-    # Convert data to binary, define structuring element, and perform morphological closing then opening
-    binary_images = _morphological_operations(self)
+        '''Label and track image features.
 
-    # Apply mask
-    binary_images_with_mask  = _apply_mask(self, binary_images)
-    
-    # Filter area
-    area, min_area, binary_labels, N_initial = _filter_area(self, binary_images_with_mask)
-    
-    # Label objects
-    labels, num = _label_either(binary_labels, return_num= True, connectivity=3)
-    
-    # Wrap labels
-    labels_wrapped, N_final = _wrap(labels)
-    
-    # Final labels to DataArray
-    new_labels = xr.DataArray(labels_wrapped, dims=da.dims, coords=da.coords)   
-    new_labels = new_labels.where(new_labels!=0, drop=False, other=np.nan)
+        Returns
+        -------
+        labels : xarray.DataArray
+            Integer labels of the connected regions.
+        '''
 
-    
-    ## Metadata
-    
-    # Calculate Percent of total object area retained after size filtering
-    sum_tot_area = int(np.sum(area.values))
-    
-    reject_area = area.where(area<=min_area, drop=True)
-    sum_reject_area = int(np.sum(reject_area.values))
-    percent_area_reject = (sum_reject_area/sum_tot_area)
-    
-    accept_area = area.where(area>min_area, drop=True)
-    sum_accept_area = int(np.sum(accept_area.values))
-    percent_area_accept = (sum_accept_area/sum_tot_area)
+        if (mask == 0).all():
+            raise ValueError('Found only zeros in `mask` input. The mask should indicate valid regions with values of 1')
 
-    new_labels = new_labels.rename('labels')
-    new_labels.attrs['inital objects identified'] = int(N_initial)
-    new_labels.attrs['final objects tracked'] = int(N_final)
-    new_labels.attrs['radius'] = radius
-    new_labels.attrs['size quantile threshold'] = self.min_size_quartile
-    new_labels.attrs['min area'] = min_area
-    new_labels.attrs['percent area reject'] = percent_area_reject
-    new_labels.attrs['percent area accept'] = percent_area_accept
-    
-    print('inital objects identified \t', int(N_initial))
-    print('final objects tracked \t', int(N_final))
-    
-    return new_labels
+        # Convert data to binary, define structuring element, and perform morphological closing then opening
+        binary_images = _morphological_operations(self)
+
+        # Apply mask
+        binary_images_with_mask  = _apply_mask(self, binary_images)
+
+        # Filter area
+        area, min_area, binary_labels, N_initial = _filter_area(self, binary_images_with_mask)
+
+        # Label objects
+        labels, num = _label_either(binary_labels, return_num= True, connectivity=3)
+
+        # Wrap labels
+        labels_wrapped, N_final = _wrap(labels)
+
+        # Final labels to DataArray
+        new_labels = xr.DataArray(labels_wrapped, dims=da.dims, coords=da.coords)   
+        new_labels = new_labels.where(new_labels!=0, drop=False, other=np.nan)
+
+
+        ## Metadata
+
+        # Calculate Percent of total object area retained after size filtering
+        sum_tot_area = int(np.sum(area.values))
+
+        reject_area = area.where(area<=min_area, drop=True)
+        sum_reject_area = int(np.sum(reject_area.values))
+        percent_area_reject = (sum_reject_area/sum_tot_area)
+
+        accept_area = area.where(area>min_area, drop=True)
+        sum_accept_area = int(np.sum(accept_area.values))
+        percent_area_accept = (sum_accept_area/sum_tot_area)
+
+        new_labels = new_labels.rename('labels')
+        new_labels.attrs['inital objects identified'] = int(N_initial)
+        new_labels.attrs['final objects tracked'] = int(N_final)
+        new_labels.attrs['radius'] = radius
+        new_labels.attrs['size quantile threshold'] = self.min_size_quartile
+        new_labels.attrs['min area'] = min_area
+        new_labels.attrs['percent area reject'] = percent_area_reject
+        new_labels.attrs['percent area accept'] = percent_area_accept
+
+        print('inital objects identified \t', int(N_initial))
+        print('final objects tracked \t', int(N_final))
+
+        return new_labels
 
 
     ### PRIVATE METHODS - not meant to be called by user ###

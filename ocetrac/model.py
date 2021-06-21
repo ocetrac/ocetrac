@@ -5,7 +5,7 @@ from skimage.measure import regionprops
 from skimage.measure import label as label_np
 import dask.array as dsa
 
-class ocetrac:
+class Tracker:
         
     def __init__(self, da, mask, radius, min_size_quartile, xdim, ydim):
         

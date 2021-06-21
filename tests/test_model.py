@@ -97,8 +97,10 @@ class TrackTester():
 
         assert N_final == 4
 
-    @pytest.mark.parametrize(self.radius, [8, 10])
-    @pytest.mark.parametrize(self.min_size_quartile, [0.75, 0.80])
+    @pytest.mark.parametrize("radius", [8, 10])
+    @pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
     def test_track(self):
+        self.radius = radius
+        self.min_size_quartile = min_size_quartile
         new_labels = Tracker.track(self)
         assert (new_labels.attrs['percent area reject'] + new_labels.attrs['percent area accept']) == 1.0

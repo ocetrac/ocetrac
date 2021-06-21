@@ -1,6 +1,7 @@
 from ocetrac.model import Tracker 
 
 import pytest
+import unittest
 import xarray as xr
 import numpy as np
 import scipy.ndimage
@@ -8,12 +9,8 @@ from skimage.measure import regionprops
 from skimage.measure import label as label_np
 import dask.array as dsa
 
-class TrackTester():
+class TrackTester(unittest.TestCase):
     
-    def make_blobs(x0, y0, sigma0):
-            blob = np.exp(-((x - x0)**2 + (y - y0)**2)/(2*sigma0**2))
-            return blob
-        
     def example_anomaly_data(self):
         x0 = [180, 225, 360, 80, 1, 360, 1]
         y0 = [0, 20, -50, 40, -50, 40, 40]
@@ -23,8 +20,11 @@ class TrackTester():
         lat = np.arange(-90, 90) + 0.5
         x, y = np.meshgrid(lon, lat)
 
-        features = {}
+        def make_blobs(x0, y0, sigma0):
+            blob = np.exp(-((x - x0)**2 + (y - y0)**2)/(2*sigma0**2))
+            return blob
         
+        features = {}
         for i in range(len(x0)):
             features[i] = make_blobs(x0[i], y0[i], sigma0[i])
 
@@ -104,3 +104,7 @@ class TrackTester():
         self.min_size_quartile = min_size_quartile
         new_labels = Tracker.track(self)
         assert (new_labels.attrs['percent area reject'] + new_labels.attrs['percent area accept']) == 1.0
+        
+        
+if __name__ == '__main__':
+    unittest.main()

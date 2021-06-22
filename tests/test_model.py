@@ -1,7 +1,6 @@
 from ocetrac.model import Tracker 
 
 import pytest
-import unittest
 import xarray as xr
 import numpy as np
 import scipy.ndimage
@@ -9,9 +8,24 @@ from skimage.measure import regionprops
 from skimage.measure import label as label_np
 import dask.array as dsa
 
-class TrackTester(unittest.TestCase):
+
+
+
+class TrackTester():
+
+    def __init__(self):
+        
+        Anom, mask, xdim, ydim = example_anomaly_data()
+        
+        self.da = Anom.chunk({'time': 1})
+        self.mask = mask
+        self.radius = 8
+        self.min_size_quartile = .75
+        self.xdim = xdim
+        self.ydim = ydim
+
+    def example_anomaly_data():
     
-    def example_anomaly_data(self):
         x0 = [180, 225, 360, 80, 1, 360, 1]
         y0 = [0, 20, -50, 40, -50, 40, 40]
         sigma0 = [15, 25, 30, 10, 30, 15, 10]
@@ -19,11 +33,12 @@ class TrackTester(unittest.TestCase):
         lon = np.arange(0, 360) + 0.5
         lat = np.arange(-90, 90) + 0.5
         x, y = np.meshgrid(lon, lat)
+        xdim = 'lat'; ydim = 'lon'
 
         def make_blobs(x0, y0, sigma0):
             blob = np.exp(-((x - x0)**2 + (y - y0)**2)/(2*sigma0**2))
             return blob
-        
+
         features = {}
         for i in range(len(x0)):
             features[i] = make_blobs(x0[i], y0[i], sigma0[i])
@@ -47,23 +62,22 @@ class TrackTester(unittest.TestCase):
         mask = xr.DataArray(np.ones(Anom[0,:,:].shape), coords=Anom[0,:,:].coords)
         mask[60:90,120:190] = 0
 
-        self.da = self.da.chunk({'time': 1})
-        self.mask = mask
-        self.radius = 8
-        self.min_size_quartile = .75
-        self.xdim = 'lon'
-        self.ydim = 'lat'
+
+        return Anom, mask, xdim, ydim
 
     def test_morphological_operations(self):
+        
         binary_images = Tracker._morphological_operations(self)
-
+        
         assert isinstance(binary_images.data, dsa.Array)
 
-        ocetrac_guess = Anom.where(binary_images==True, drop=False, other=np.nan) 
+        ocetrac_guess = self.da.where(binary_images==True, drop=False, other=np.nan) 
         best_guess = self.da.where(self.da>0, drop=False, other=np.nan) 
         part = ocetrac_guess.isin(best_guess)
         whole = best_guess.isin(best_guess)
-
+        
+        print(part.sum().values/whole.sum().values*10)
+        
         assert part.sum().values/whole.sum().values*100 >= 80
         assert part.sum().values == 26122
     
@@ -105,6 +119,3 @@ class TrackTester(unittest.TestCase):
         new_labels = Tracker.track(self)
         assert (new_labels.attrs['percent area reject'] + new_labels.attrs['percent area accept']) == 1.0
         
-        
-if __name__ == '__main__':
-    unittest.main()

@@ -8,9 +8,9 @@ ocetrac
 [![Documentation Status](https://readthedocs.org/projects/ocetrac/badge/?version=latest)](https://ocetrac.readthedocs.io/en/latest/?badge=latest)
 [![License:MIT](https://img.shields.io/badge/License-MIT-lightgray.svg?style=flt-square)](https://opensource.org/licenses/MIT)
 
-Ocetrac is a Python 3.7+ packaged designed to label and track unique geospatial features from gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the [Climate Data Science Lab](https://ocean-transport.github.io/cds_lab.html). 
+Ocetrac is a Python 3.6+ packaged designed to label and track unique geospatial features from gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the [Climate Data Science Lab](https://ocean-transport.github.io/cds_lab.html). 
 
-When using, please cite the software [package](link?).
+When using please cite the software [package](link?).
 
 
 Installation
@@ -31,4 +31,12 @@ To install the core package run: ``pip install ocetrac``.
 3. Install ocetrac with ``pip install -e ./ocetrac``. This will allow
    changes you make locally, to be reflected when you import the package in Python.
    
- 
+How you can contribute
+----------------------
+
+- You can get involved by trying ocetrac, filing [issues](https://github.com/ocetrac/ocetrac/issues) if you find problems, and making [pull requests](https://github.com/ocetrac/ocetrac/pulls) if you make improvements.
+
+Acknowledgements
+----------------
+- We rely heavily on [scikit-image](https://peerj.com/articles/453/) and its community of contributors. 
+- This work grew from a collabortion with NCAR during the ASP Graduate Visitor Program attended by Hillary Scannell. This project recieved continued support from the Leonardo DiCaprio Foundation, Microsoft, and the Gordon and Betty Moore Foundation. 

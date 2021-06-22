@@ -5,6 +5,10 @@ from skimage.measure import regionprops
 from skimage.measure import label as label_np
 import dask.array as dsa
 
+def _apply_mask(binary_images, mask):
+    binary_images_with_mask = binary_images.where(mask==1, drop=False, other=0)
+    return binary_images_with_mask
+
 class Tracker:
         
     def __init__(self, da, mask, radius, min_size_quartile, xdim, ydim):
@@ -52,14 +56,14 @@ class Tracker:
             Integer labels of the connected regions.
         '''
 
-        if (mask == 0).all():
+        if (self.mask == 0).all():
             raise ValueError('Found only zeros in `mask` input. The mask should indicate valid regions with values of 1')
 
         # Convert data to binary, define structuring element, and perform morphological closing then opening
-        binary_images = _morphological_operations(self)
+        binary_images = self._morphological_operations()
 
         # Apply mask
-        binary_images_with_mask  = _apply_mask(self, binary_images)
+        binary_images_with_mask  = _apply_mask(binary_images,self.mask)
 
         # Filter area
         area, min_area, binary_labels, N_initial = _filter_area(self, binary_images_with_mask)
@@ -118,7 +122,7 @@ class Tracker:
         '''
 
         # Convert images to binary. All positive values == 1, otherwise == 0
-        bitmap_binary = da.where(self.da>0, drop=False, other=0)
+        bitmap_binary = self.da.where(self.da>0, drop=False, other=0)
         bitmap_binary = bitmap_binary.where(bitmap_binary==0, drop=False, other=1)
 
         # Define structuring element
@@ -144,10 +148,6 @@ class Tracker:
                                    vectorize=True,
                                    dask='parallelized')
         return mo_binary
-
-    def _apply_mask(self, binary_images):
-        binary_images_with_mask = binary_images.where(self.mask==1, drop=False, other=0)
-        return binary_images_with_mask
 
 
     def _filter_area(self, binary_images):

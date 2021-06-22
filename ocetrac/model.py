@@ -63,19 +63,19 @@ class Tracker:
         binary_images = self._morphological_operations()
 
         # Apply mask
-        binary_images_with_mask  = _apply_mask(binary_images,self.mask)
+        binary_images_with_mask  = _apply_mask(binary_images,self.mask) # perhaps change to method? JB
 
         # Filter area
-        area, min_area, binary_labels, N_initial = _filter_area(self, binary_images_with_mask)
+        area, min_area, binary_labels, N_initial = self._filter_area(binary_images_with_mask)
 
         # Label objects
-        labels, num = _label_either(binary_labels, return_num= True, connectivity=3)
+        labels, num = self._label_either(binary_labels, return_num= True, connectivity=3)
 
         # Wrap labels
-        labels_wrapped, N_final = _wrap(labels)
+        labels_wrapped, N_final = self._wrap(labels)
 
         # Final labels to DataArray
-        new_labels = xr.DataArray(labels_wrapped, dims=da.dims, coords=da.coords)   
+        new_labels = xr.DataArray(labels_wrapped, dims=self.da.dims, coords=self.da.coords)   
         new_labels = new_labels.where(new_labels!=0, drop=False, other=np.nan)
 
 
@@ -95,7 +95,7 @@ class Tracker:
         new_labels = new_labels.rename('labels')
         new_labels.attrs['inital objects identified'] = int(N_initial)
         new_labels.attrs['final objects tracked'] = int(N_final)
-        new_labels.attrs['radius'] = radius
+        new_labels.attrs['radius'] = self.radius
         new_labels.attrs['size quantile threshold'] = self.min_size_quartile
         new_labels.attrs['min area'] = min_area
         new_labels.attrs['percent area reject'] = percent_area_reject
@@ -154,7 +154,7 @@ class Tracker:
         '''calculatre area with regionprops'''
 
         def get_labels(binary_images):
-            blobs_labels = _label_either(binary_images, background=0)
+            blobs_labels = self._label_either(binary_images, background=0)
             return blobs_labels
 
         labels = xr.apply_ufunc(get_labels, binary_images,
@@ -173,7 +173,7 @@ class Tracker:
             labels[i,:,:] = labels[i,:,:].values + labels[i-1,:,:].max().values
 
         labels = labels.where(labels>0, drop=False, other=0)  
-        labels_wrapped, N_initial = _wrap(np.array(labels))
+        labels_wrapped, N_initial = self._wrap(np.array(labels))
 
         # Calculate Area of each object and keep objects larger than threshold
         props = regionprops(labels_wrapped.astype('int'))
@@ -192,7 +192,7 @@ class Tracker:
         return area, min_area, binary_labels, N_initial
 
 
-    def _label_either(data, **kwargs):
+    def _label_either(self, data, **kwargs):
         if isinstance(data, dsa.Array):
             try:
                 from dask_image.ndmeasure import label as label_dask
@@ -209,7 +209,7 @@ class Tracker:
         return label_func(data, **kwargs)
 
 
-    def _wrap(labels):
+    def _wrap(self, labels):
         ''' Impose periodic boundary and wrap labels'''
         first_column = labels[..., 0]
         last_column = labels[..., -1]

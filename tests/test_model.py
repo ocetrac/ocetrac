@@ -19,7 +19,7 @@ def example_data():
     lon = np.arange(0, 360) + 0.5
     lat = np.arange(-90, 90) + 0.5
     x, y = np.meshgrid(lon, lat)
-    xdim = 'lat'; ydim = 'lon'
+    xdim = 'lon'; ydim = 'lat'
 
     def make_blobs(x0, y0, sigma0):
         blob = np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * sigma0 ** 2))
@@ -65,12 +65,13 @@ def example_data():
 
 @pytest.mark.parametrize("radius", [8, 10])
 @pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
-def test_track(example_data, radius, min_size_quartile):
-    xdim = "longitude"
-    ydim = "latitude"
+@pytest.mark.parametrize('xdim', ['lon', 'longitude', 'whoo'])
+@pytest.mark.parametrize('ydim', ['lat', 'latitude', 'whaa'])
+def test_track(example_data, radius, min_size_quartile, xdim, ydim):
 
     Anom, mask = example_data
     Anom = Anom.rename({'lon':xdim, 'lat':ydim})
+    mask = mask.rename({'lon':xdim, 'lat':ydim})
 
     tracker = Tracker(Anom, mask, radius, min_size_quartile, xdim=xdim, ydim=ydim)
     new_labels = tracker.track()

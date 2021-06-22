@@ -8,9 +8,10 @@ ocetrac
 [![Documentation Status](https://readthedocs.org/projects/ocetrac/badge/?version=latest)](https://ocetrac.readthedocs.io/en/latest/?badge=latest)
 [![License:MIT](https://img.shields.io/badge/License-MIT-lightgray.svg?style=flt-square)](https://opensource.org/licenses/MIT)
 
-Ocetrac is a Python 3.6+ packaged designed to label and track unique geospatial features from gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the [Climate Data Science Lab](https://ocean-transport.github.io/cds_lab.html). 
+Ocetrac is a Python 3.6+ packaged designed to label and track unique geospatial features from gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the [Climate Data Science Lab](https://ocean-transport.github.io/cds_lab.html) at Columbia University / Lamont-Doherty Earth Observatory.
 
-When using please cite the software [package](link?).
+When using this software, please cite the [package](link?) as:
+...
 
 
 Installation

@@ -1,4 +1,4 @@
-from ocetrac.model import Tracker
+from ocetrac.model import Tracker, _apply_mask
 
 import pytest
 import xarray as xr
@@ -81,62 +81,62 @@ def test_track(example_data, radius, min_size_quartile, xdim, ydim):
     ) == 1.0
 
 
-# class TrackTester():
+def test_morphological_operations(example_data, radius=8, min_size_quartile=0.75, xdim='lat', ydim='lon'):
 
-#     def __init__(self):
+    Anom, mask = example_data
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, xdim, ydim)
+    binary_images = tracker._morphological_operations()
 
-#         Anom, mask, xdim, ydim = example_anomaly_data()
+    assert isinstance(binary_images.data, dsa.Array)
 
-#         self.da = Anom.chunk({'time': 1})
-#         self.mask = mask
-#         self.radius = 8
-#         self.min_size_quartile = .75
-#         self.xdim = xdim
-#         self.ydim = ydim
+    ocetrac_guess = Anom.where(binary_images==True, drop=False, other=np.nan)
+    best_guess = Anom.where(Anom>0, drop=False, other=np.nan)
+    part = ocetrac_guess.isin(best_guess)
+    whole = best_guess.isin(best_guess)
 
+    print(part.sum().values/whole.sum().values*10)
 
-#     def test_morphological_operations(self):
+    assert part.sum().values/whole.sum().values*100 >= 80
+    assert part.sum().values == 26122
 
-#         binary_images = Tracker._morphological_operations(self)
+def test_apply_mask(example_data, radius=8, min_size_quartile=0.75, xdim='lat', ydim='lon'):
+    
+    Anom, mask = example_data
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, xdim, ydim)
+    binary_images = tracker._morphological_operations()
+    binary_images_with_mask = _apply_mask(binary_images, mask)
+    assert (binary_images_with_mask.where(mask==0, drop=True)==0).all()
 
-#         assert isinstance(binary_images.data, dsa.Array)
+def test_filter_area(example_data, radius=8, min_size_quartile=0.75, xdim='lat', ydim='lon'):
+    
+    Anom, mask = example_data
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, xdim, ydim)
+    binary_images = tracker._morphological_operations()
+    binary_images_with_mask = _apply_mask(binary_images, mask)
+    area, min_area, binary_labels, N_initial = tracker._filter_area(binary_images_with_mask)
 
-#         ocetrac_guess = self.da.where(binary_images==True, drop=False, other=np.nan)
-#         best_guess = self.da.where(self.da>0, drop=False, other=np.nan)
-#         part = ocetrac_guess.isin(best_guess)
-#         whole = best_guess.isin(best_guess)
+    assert min_area == 2761.5
+    assert N_initial.astype(int) == 15
 
-#         print(part.sum().values/whole.sum().values*10)
+def test_label_either(example_data, radius=8, min_size_quartile=0.75, xdim='lat', ydim='lon'):
+    
+    Anom, mask = example_data
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, xdim, ydim)
+    binary_images = tracker._morphological_operations()
+    binary_images_with_mask = _apply_mask(binary_images, mask)
+    labels, num = tracker._label_either(binary_images_with_mask, return_num= True, connectivity=3)
 
-#         assert part.sum().values/whole.sum().values*100 >= 80
-#         assert part.sum().values == 26122
+    assert labels[2,:,:].max() == 6.
+    assert all([i in labels[2,:,:] for i in range(0,6)])
 
-#     def test_apply_mask(self):
-#         binary_images = Tracker._morphological_operations(self)
-#         binary_images_with_mask = Tracker._apply_mask(self, binary_images)
-#         assert (binary_images_with_mask.where(self.mask==0, drop=True)==0).all()
+def test_wrap(example_data, radius=8, min_size_quartile=0.75, xdim='lat', ydim='lon'):
+    
+    Anom, mask = example_data
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, xdim, ydim)
+    binary_images = tracker._morphological_operations()
+    binary_images_with_mask = _apply_mask(binary_images, mask)
+    area, min_area, binary_labels, N_initial = tracker._filter_area(binary_images_with_mask)
+    labels, num = tracker._label_either(binary_images_with_mask, return_num= True, connectivity=3)
+    labels_wrapped, N_final = tracker._wrap(labels)
 
-#     def test_filter_area(self):
-#         binary_images = Tracker._morphological_operations(self)
-#         binary_images_with_mask = Tracker._apply_mask(self, binary_images)
-#         area, min_area, binary_labels, N_initial = Tracker._filter_area(self, binary_images_with_mask)
-
-#         assert min_area == 3853.5
-#         assert N_initial.astype(int) == 12
-
-#     def test_label_either(self):
-#         binary_images = Tracker._morphological_operations(self)
-#         binary_images_with_mask = Tracker._apply_mask(self, binary_images)
-#         labels, num = Tracker._label_either(binary_images_with_mask, return_num= True, connectivity=3)
-
-#         assert labels[2,:,:].max() == 6.
-#         assert all([i in labels[2,:,:] for i in range(0,6)])
-
-#     def test_wrap(self):
-#         binary_images = Tracker._morphological_operations(self)
-#         binary_images_with_mask = Tracker._apply_mask(self, binary_images)
-#         area, min_area, binary_labels, N_initial = Tracker._filter_area(self, binary_images_with_mask)
-#         labels, num = Tracker._label_either(binary_images_with_mask, return_num= True, connectivity=3)
-#         labels_wrapped, N_final = Tracker._wrap(labels)
-
-#         assert N_final == 4
+    assert N_final == 6

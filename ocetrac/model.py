@@ -5,9 +5,6 @@ from skimage.measure import regionprops
 from skimage.measure import label as label_np
 import dask.array as dsa
 
-def _apply_mask(binary_images, mask):
-    binary_images_with_mask = binary_images.where(mask==1, drop=False, other=0)
-    return binary_images_with_mask
 
 class Tracker:
         
@@ -63,7 +60,7 @@ class Tracker:
         binary_images = self._morphological_operations()
 
         # Apply mask
-        binary_images_with_mask  = _apply_mask(binary_images,self.mask) # perhaps change to method? JB
+        binary_images_with_mask  = self._apply_mask(binary_images,self.mask) # perhaps change to method? JB
 
         # Filter area
         area, min_area, binary_labels, N_initial = self._filter_area(binary_images_with_mask)
@@ -108,7 +105,9 @@ class Tracker:
 
 
     ### PRIVATE METHODS - not meant to be called by user ###
-    
+    def _apply_mask(self, binary_images, mask):
+        binary_images_with_mask = binary_images.where(mask==1, drop=False, other=0)
+        return binary_images_with_mask
 
     def _morphological_operations(self): 
         '''Converts xarray.DataArray to binary, defines structuring element, and performs morphological closing then opening.
@@ -163,14 +162,22 @@ class Tracker:
                                 output_dtypes=[binary_images.dtype],
                                 vectorize=True,
                                 dask='parallelized')
-
-
-        labels = xr.DataArray(labels, dims=binary_images.dims, coords=binary_images.coords)
+        print(labels)
         labels = labels.where(labels>0, drop=False, other=np.nan)  
 
         # The labels are repeated each time step, therefore we relabel them to be consecutive
-        for i in range(1, labels.shape[0]):
-            labels[i,:,:] = labels[i,:,:].values + labels[i-1,:,:].max().values
+        # for i in range(1, labels.shape[0]):
+        #     labels[i,:,:] = labels[i,:,:].values + labels[i-1,:,:].max().values
+        # dask friendly version
+            # the dask friendly (and label aware version)
+        timedim = 'time' # should be an input
+        max_dims = [di for di in labels.dims if di!=timedim]
+        first_slice = labels.isel({timedim:0})
+        remaining_slice = labels.isel({timedim:slice(1,None)})
+        shifted_slice = labels.max(max_dims).isel({timedim:slice(0,-1)}) # effectively shifted `remaining slice` one element back in time
+        # now just replace the time coordinate, so we avoid xarrays alignment
+        shifted_slice = shifted_slice.assign_coords({timedim:remaining_slice[timedim]})
+        max_padded_values = remaining_slice + shifted_slice
 
         labels = labels.where(labels>0, drop=False, other=0)  
         labels_wrapped, N_initial = self._wrap(np.array(labels))

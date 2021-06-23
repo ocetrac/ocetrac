@@ -120,9 +120,6 @@ Preparing Pull Requests
     will generally be quite clear about what you need to do to pass the commit test.
 
 
-
-
-
 #. Break your edits up into reasonably sized commits::
 
     $ git commit -a -m "<commit message>"
@@ -139,6 +136,7 @@ Preparing Pull Requests
 
 #. Add yourself to the `Project Contributors <https://ocetrac.readthedocs.io/en/latest/authors.html>`_ list via ``./docs/authors.md``.
 
+
 #. Finally, submit a pull request (PR) through the GitHub website using this data::
 
     head-fork: YOUR_GITHUB_USERNAME/ocetrac
@@ -149,6 +147,7 @@ Preparing Pull Requests
 
    The merged pull request will undergo the same testing that your local branch
    had to pass when pushing.
+
 
 #. After your pull request is merged into the `ocetrac/main`, you will need
    to fetch those changes and rebase your main so that your main reflects the latest

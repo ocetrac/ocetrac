@@ -3,9 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Ocetrac
+Ocetrac: 
 =======================================
-Label and track unique geospatial features from gridded datasets
+
 ~~~~~~
 .. image:: https://github.com/ocetrac/ocetrac/workflows/Tests/badge.svg
    :target: https://github.com/ocetrac/ocetrac/actions
@@ -26,28 +26,32 @@ Label and track unique geospatial features from gridded datasets
    :target: https://anaconda.org/conda-forge/ocetrac
 
 
-| **Welcome to the documentation page for Ocetrac!** 
-| Ocetrac is a python package specifically designed to identify and track the evolution of extreme climatic events in gridded data. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.  
+| Ocetrac is a Python 3.6+ package designed to label and track the evolution of unique geospatial features in gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the Climate Data Science Lab at Columbia University / Lamont-Doherty Earth Observatory. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.  
+
+For recommendations or bug reports, please visit:
+https://github.com/ocetrac/ocetrac/issues/new
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :caption: Getting started
 
-   install
-   api
-   dev
-
-| **How does it work?** 
-| Extreme values are first identified in the dataset by the user using a criteria appropriate for the data and application. Some examples of *oceanographic* use cases could include marine heatwaves (example below), salinity anomalies, hypoxia, or high acidity events. Ocetrac treats these data as stacks of still frame images to identify and label coherent objects. It then stitches these fames together to track the evolution of these objects in both time and space.
-
-| **Examples:**
-
-.. toctree::
-   :maxdepth: 1
-
-   marine_heatwave_example
+   installation
+   dependencies
    
-.. image:: _static/ocetrac_flowchart.png
-   :width: 600 px
-   :align: center
+.. toctree::
+   :maxdepth: 2
+   :caption: Users Guide
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Help and Reference
+
+   GitHub Repo <https://github.com/ocetrac/ocetrac>
+   api
+   package_structure
+   whats-new
+   authors
+   contributing
+   wishlist
+   
 

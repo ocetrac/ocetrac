@@ -4,8 +4,7 @@ Contribution Guide
 
 Contributions are highly welcomed and appreciated.  Every little help counts,
 so do not hesitate! You can make a high impact on ``ocetrac`` just by using it, being
-involved in `discussions <https://github.com/ocetrac/ocetrac/discussions>`_
- and reporting `issues <https://github.com/ocetrac/ocetrac/issues>`__.
+involved in `discussions <https://github.com/ocetrac/ocetrac/discussions>`_ and reporting `issues <https://github.com/ocetrac/ocetrac/issues>`__.
 
 The following sections cover some general guidelines
 regarding development in ``ocetrac`` for maintainers and contributors.
@@ -138,9 +137,7 @@ Preparing Pull Requests
    testing recommendations.
 
 
-#. Add yourself to the
-    `Project Contributors <https://ocetrac.readthedocs.io/en/latest/authors.html>`_
-    list via ``./docs/authors.md``.
+#. Add yourself to the `Project Contributors <https://ocetrac.readthedocs.io/en/latest/authors.html>`_ list via ``./docs/authors.md``.
 
 #. Finally, submit a pull request (PR) through the GitHub website using this data::
 

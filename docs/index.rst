@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Ocetrac: 
+Ocetrac
 =======================================
 
 ~~~~~~
@@ -26,7 +26,8 @@ Ocetrac:
    :target: https://anaconda.org/conda-forge/ocetrac
 
 
-| Ocetrac is a Python 3.6+ package designed to label and track the evolution of unique geospatial features in gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the Climate Data Science Lab at Columbia University / Lamont-Doherty Earth Observatory. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.  
+| 
+|Ocetrac is a Python 3.6+ package designed to label and track the evolution of unique geospatial features in gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the Climate Data Science Lab at Columbia University. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.  
 
 For recommendations or bug reports, please visit:
 https://github.com/ocetrac/ocetrac/issues/new

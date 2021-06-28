@@ -4,6 +4,7 @@ import scipy.ndimage
 from skimage.measure import regionprops 
 from skimage.measure import label as label_np
 import dask.array as dsa
+from xarray.tests import raise_if_dask_computes
 
 
 class Tracker:
@@ -61,7 +62,10 @@ class Tracker:
 
         # Apply mask
         binary_images_with_mask  = self._apply_mask(binary_images,self.mask) # perhaps change to method? JB
-
+    
+        if (binary_images_with_mask == 0).all():
+            raise ValueError('No features found in `da` input. Try adjusting `radius` and `min_size_quartile`')
+        
         # Filter area
         area, min_area, binary_labels, N_initial = self._filter_area(binary_images_with_mask)
 
@@ -162,7 +166,7 @@ class Tracker:
                                 output_dtypes=[binary_images.dtype],
                                 vectorize=True,
                                 dask='parallelized')
-        print(labels)
+
         labels = labels.where(labels>0, drop=False, other=np.nan)  
 
         # The labels are repeated each time step, therefore we relabel them to be consecutive

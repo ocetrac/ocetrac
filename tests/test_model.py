@@ -37,8 +37,8 @@ def example_data():
 
 @pytest.mark.parametrize("radius", [2, 4])
 @pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
-@pytest.mark.parametrize('xdim', ['lon', 'longitude', 'whoo'])
-@pytest.mark.parametrize('ydim', ['lat', 'latitude', 'whaa'])
+@pytest.mark.parametrize('xdim', ['x', 'lon', 'longitude'])
+@pytest.mark.parametrize('ydim', ['y', 'lat', 'latitude'])
 @pytest.mark.parametrize('dask', [True, False])
 def test_track(example_data, radius, min_size_quartile, xdim, ydim, dask):
     

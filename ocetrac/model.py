@@ -4,7 +4,6 @@ import scipy.ndimage
 from skimage.measure import regionprops 
 from skimage.measure import label as label_np
 import dask.array as dsa
-from xarray.tests import raise_if_dask_computes
 
 
 class Tracker:

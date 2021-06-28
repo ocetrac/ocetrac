@@ -10,4 +10,4 @@ Tracking
 .. autosummary::
    :toctree: ./_generated/
    
-   model.track
+   model.Tracker

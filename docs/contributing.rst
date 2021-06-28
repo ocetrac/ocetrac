@@ -151,7 +151,7 @@ Preparing Pull Requests
 
 #. After your pull request is merged into the `ocetrac/main`, you will need
    to fetch those changes and rebase your main so that your main reflects the latest
-   version of GliderTools. The changes should be fetched and incorporated (rebase) also right
+   version of ocetrac. The changes should be fetched and incorporated (rebase) also right
    before you are planning to introduce changes.::
 
      $ git checkout main # switch back to main branch

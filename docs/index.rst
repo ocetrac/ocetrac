@@ -14,11 +14,12 @@ Ocetrac
 .. image:: https://img.shields.io/pypi/v/ocetrac.svg
    :target: https://pypi.org/project/ocetrac
    
-.. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
-   :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
-   
 .. image:: https://img.shields.io/conda/dn/conda-forge/ocetrac?label=conda-forge
    :target: https://anaconda.org/conda-forge/ocetrac
+   
+.. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
+   :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest   
+
 
 |
 Ocetrac is a Python 3.6+ package designed to label and track the evolution of unique geospatial features in gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the Climate Data Science Lab at Columbia University. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.  

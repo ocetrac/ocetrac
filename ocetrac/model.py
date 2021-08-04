@@ -54,7 +54,7 @@ class Tracker:
         if ((timedim, ydim, xdim) != da.dims):
             try:
                 da = da.transpose(timedim, ydim, xdim) 
-            except:''
+            except:
                 raise ValueError('Ocetrac currently only supports 3D DataArrays. The dimensions should contain time, x, and y.')
 
             

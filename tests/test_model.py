@@ -65,13 +65,14 @@ def example_data():
 
 @pytest.mark.parametrize("radius", [8, 10])
 @pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
+@pytest.mark.parametrize('timedim', ['time', 't', 'months'])
 @pytest.mark.parametrize('xdim', ['lon', 'longitude', 'whoo'])
 @pytest.mark.parametrize('ydim', ['lat', 'latitude', 'whaa'])
 def test_track(example_data, radius, min_size_quartile, timedim, xdim, ydim):
 
     Anom, mask = example_data
-    Anom = Anom.rename({'lon':xdim, 'lat':ydim})
-    mask = mask.rename({'lon':xdim, 'lat':ydim})
+    Anom = Anom.rename({'time':timedim, 'lon':xdim, 'lat':ydim})
+    mask = mask.rename({'time':timedim, 'lon':xdim, 'lat':ydim})
 
     tracker = Tracker(Anom, mask, radius, min_size_quartile, timedim=timedim, xdim=xdim, ydim=ydim)
     new_labels = tracker.track()

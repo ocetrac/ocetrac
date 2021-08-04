@@ -19,7 +19,7 @@ def example_data():
     lon = np.arange(0, 360) + 0.5
     lat = np.arange(-90, 90) + 0.5
     x, y = np.meshgrid(lon, lat)
-    timedim = 'time', xdim = 'lon'; ydim = 'lat'
+    timedim = 'time'; xdim = 'lon'; ydim = 'lat'
 
     def make_blobs(x0, y0, sigma0):
         blob = np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * sigma0 ** 2))

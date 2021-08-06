@@ -55,7 +55,7 @@ class Tracker:
             try:
                 da = da.transpose(timedim, ydim, xdim) 
             except:
-                raise ValueError(f'Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(ds.dims)}')
+                raise ValueError(f'Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(da.dims)}')
 
             
     def track(self):

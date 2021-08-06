@@ -81,13 +81,13 @@ def test_track(example_data, radius, min_size_quartile, timedim, xdim, ydim):
         + new_labels.attrs["percent area accept"]
     ) == 1.0
 
-
 def test_morphological_operations(example_data, radius=8, min_size_quartile=0.75, timedim='time', xdim='lat', ydim='lon'):
 
     Anom, mask = example_data
     tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim)
     binary_images = tracker._morphological_operations()
-
+    
+    assert ((timedim, ydim, xdim) != Anom.expand_dims('level').dims)
     assert isinstance(binary_images.data, dsa.Array)
 
     ocetrac_guess = Anom.where(binary_images==True, drop=False, other=np.nan)

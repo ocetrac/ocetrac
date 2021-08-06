@@ -11,7 +11,7 @@ def _apply_mask(binary_images, mask):
 
 class Tracker:
         
-    def __init__(self, da, mask, radius, min_size_quartile, xdim, ydim):
+    def __init__(self, da, mask, radius, min_size_quartile, timedim, xdim, ydim):
         
         '''
         Parameters
@@ -28,6 +28,9 @@ class Tracker:
         min_size_quartile : float
             The quantile used to define the threshold of the smallest area object retained in tracking. Value should be between 0 and 1.
 
+        timedim : str
+            The name of the time dimension
+        
         xdim : str
             The name of the x dimension
 
@@ -44,8 +47,16 @@ class Tracker:
         self.mask = mask
         self.radius = radius
         self.min_size_quartile = min_size_quartile
+        self.timedim = timedim
         self.xdim = xdim
         self.ydim = ydim   
+        
+        if ((timedim, ydim, xdim) != da.dims):
+            try:
+                da = da.transpose(timedim, ydim, xdim) 
+            except:
+                raise ValueError(f'Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(da.dims)}')
+
             
     def track(self):
         '''Label and track image features.
@@ -177,11 +188,14 @@ class Tracker:
 
         # Calculate Area of each object and keep objects larger than threshold
         props = regionprops(labels_wrapped.astype('int'))
+        
         labelprops = [p.label for p in props]
         labelprops = xr.DataArray(labelprops, dims=['label'], coords={'label': labelprops}) 
+        
         area = xr.DataArray([p.area for p in props], dims=['label'], coords={'label': labelprops})  # Number of pixels of the region.
         min_area = np.percentile(area, self.min_size_quartile*100)
         print('minimum area: ', min_area) 
+        
         keep_labels = labelprops.where(area>=min_area, drop=True)
         keep_where = np.isin(labels_wrapped, keep_labels)
         out_labels = xr.DataArray(np.where(keep_where==False, 0, labels_wrapped), dims=binary_images.dims, coords=binary_images.coords)

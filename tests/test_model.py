@@ -70,7 +70,7 @@ def example_data():
 @pytest.mark.parametrize('xdim', ['lon', 'longitude', 'whoo'])
 @pytest.mark.parametrize('ydim', ['lat', 'latitude', 'whaa'])
 @pytest.mark.parametrize("positive", [True, False])
-def test_track(example_data, radius, min_size_quartile, timedim, xdim, ydim, positive=True):
+def test_track(example_data, radius, min_size_quartile, timedim, xdim, ydim, positive):
 
     Anom, mask = example_data
     if positive==False:
@@ -94,7 +94,7 @@ def test_track(example_data, radius, min_size_quartile, timedim, xdim, ydim, pos
 def test_morphological_operations(example_data, radius=8, min_size_quartile=0.75, timedim='time', xdim='lat', ydim='lon', positive=True):
 
     Anom, mask = example_data
-    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True)
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive)
     binary_images = tracker._morphological_operations()
     
     assert ((timedim, ydim, xdim) != Anom.expand_dims('level').dims)
@@ -113,7 +113,7 @@ def test_morphological_operations(example_data, radius=8, min_size_quartile=0.75
 def test_apply_mask(example_data, radius=8, min_size_quartile=0.75, timedim='time', xdim='lat', ydim='lon', positive=True):
     
     Anom, mask = example_data
-    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True)
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive)
     binary_images = tracker._morphological_operations()
     binary_images_with_mask = _apply_mask(binary_images, mask)
     assert (binary_images_with_mask.where(mask==0, drop=True)==0).all()
@@ -121,7 +121,7 @@ def test_apply_mask(example_data, radius=8, min_size_quartile=0.75, timedim='tim
 def test_filter_area(example_data, radius=8, min_size_quartile=0.75, timedim='time', xdim='lat', ydim='lon', positive=True):
     
     Anom, mask = example_data
-    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True)
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive)
     binary_images = tracker._morphological_operations()
     binary_images_with_mask = _apply_mask(binary_images, mask)
     area, min_area, binary_labels, N_initial = tracker._filter_area(binary_images_with_mask)
@@ -132,7 +132,7 @@ def test_filter_area(example_data, radius=8, min_size_quartile=0.75, timedim='ti
 def test_label_either(example_data, radius=8, min_size_quartile=0.75, timedim='time', xdim='lat', ydim='lon', positive=True):
     
     Anom, mask = example_data
-    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True)
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive)
     binary_images = tracker._morphological_operations()
     binary_images_with_mask = _apply_mask(binary_images, mask)
     labels, num = tracker._label_either(binary_images_with_mask, return_num= True, connectivity=3)
@@ -143,7 +143,7 @@ def test_label_either(example_data, radius=8, min_size_quartile=0.75, timedim='t
 def test_wrap(example_data, radius=8, min_size_quartile=0.75, timedim='time', xdim='lat', ydim='lon', positive=True):
     
     Anom, mask = example_data
-    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True)
+    tracker = Tracker(Anom.chunk({'time': 1}), mask, radius, min_size_quartile, timedim, xdim, ydim, positive)
     binary_images = tracker._morphological_operations()
     binary_images_with_mask = _apply_mask(binary_images, mask)
     area, min_area, binary_labels, N_initial = tracker._filter_area(binary_images_with_mask)

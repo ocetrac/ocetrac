@@ -11,7 +11,7 @@ def _apply_mask(binary_images, mask):
 
 class Tracker:
         
-    def __init__(self, da, mask, radius, min_size_quartile, timedim, xdim, ydim):
+    def __init__(self, da, mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True):
         
         '''
         Parameters
@@ -36,6 +36,9 @@ class Tracker:
 
         ydim : str
             The namne of the y dimension
+            
+        positive : bool
+            True if da values are expected to be positive, false if they are negative. Default argument is True
 
         Returns
         -------
@@ -50,6 +53,7 @@ class Tracker:
         self.timedim = timedim
         self.xdim = xdim
         self.ydim = ydim   
+        self.positive = positive
         
         if ((timedim, ydim, xdim) != da.dims):
             try:
@@ -133,7 +137,12 @@ class Tracker:
         '''
 
         # Convert images to binary. All positive values == 1, otherwise == 0
-        bitmap_binary = self.da.where(self.da>0, drop=False, other=0)
+        if self.positive == True:
+            bitmap_binary = self.da.where(self.da>0, drop=False, other=0)
+        
+        elif self.positive == False:
+            bitmap_binary = self.da.where(self.da<0, drop=False, other=0)
+    
         bitmap_binary = bitmap_binary.where(bitmap_binary==0, drop=False, other=1)
 
         # Define structuring element

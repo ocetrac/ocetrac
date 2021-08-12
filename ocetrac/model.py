@@ -11,7 +11,7 @@ def _apply_mask(binary_images, mask):
 
 class Tracker:
         
-    def __init__(self, da, mask, radius, min_size_quartile, timedim, xdim, ydim, positivie=True):
+    def __init__(self, da, mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True):
         
         '''
         Parameters
@@ -38,7 +38,7 @@ class Tracker:
             The namne of the y dimension
             
         positive : bool
-            True if da values are expected to be positive, false if they are negative.
+            True if da values are expected to be positive, false if they are negative. Default argument is True
 
         Returns
         -------

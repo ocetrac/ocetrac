@@ -11,7 +11,7 @@ Start by importing numpy, xarray, and ocetrac using their standard abbreviations
 
     import numpy as np
     import xarray as xr
-    from ocetrac import model as oce
+    import ocetrac 
     
 
 Import NCEP Surface Air Temperatures over North America

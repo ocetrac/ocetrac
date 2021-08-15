@@ -50,7 +50,7 @@ Label & Track Hot Air Events with Ocetrac
 
     %%time 
     mask = xr.ones_like(anomaly.isel(time=0)) 
-    Tracker =  ocetrac.Tracker(hot_air, lsmask, radius=2, min_size_quartile=0, timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+    Tracker =  ocetrac.Tracker(hot_air, mask, radius=2, min_size_quartile=0, timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
     blobs = Tracker.track()
     
     from matplotlib.colors import ListedColormap

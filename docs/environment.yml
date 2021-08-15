@@ -13,6 +13,7 @@ dependencies:
    - nbformat
    - ipykernel
    - pandoc
+   - pooch
    - pip
    - pip:
      - docrep<=0.2.7

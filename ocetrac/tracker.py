@@ -87,7 +87,13 @@ class Tracker:
         labels, num = self._label_either(binary_labels, return_num= True, connectivity=3)
 
         # Wrap labels
-        labels_wrapped, N_final = self._wrap(labels)
+        grid_res = abs(self.da[self.xdim][1]-self.da[self.xdim][0])
+        if self.da[self.xdim][-1]-self.da[self.xdim][0] >= 360-grid_res:
+            labels_wrapped, N_final = self._wrap(labels)
+        else:
+            labels_wrapped = labels
+            N_final = np.max(labels)
+                
 
         # Final labels to DataArray
         new_labels = xr.DataArray(labels_wrapped, dims=self.da.dims, coords=self.da.coords)   
@@ -202,8 +208,12 @@ class Tracker:
         labelprops = xr.DataArray(labelprops, dims=['label'], coords={'label': labelprops}) 
         
         area = xr.DataArray([p.area for p in props], dims=['label'], coords={'label': labelprops})  # Number of pixels of the region.
+
+        if area.size == 0:
+            raise ValueError(f'No objects were detected. Try changing radius or min_size_quartile parameters.')
+        
         min_area = np.percentile(area, self.min_size_quartile*100)
-        print('minimum area: ', min_area) 
+        print(f'minimum area: {min_area}') 
         
         keep_labels = labelprops.where(area>=min_area, drop=True)
         keep_where = np.isin(labels_wrapped, keep_labels)

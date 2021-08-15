@@ -1,4 +1,4 @@
-from ocetrac.model import Tracker, _apply_mask
+from ocetrac import Tracker, _apply_mask
 
 import pytest
 import xarray as xr

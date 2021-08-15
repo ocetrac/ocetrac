@@ -32,6 +32,7 @@ For recommendations or bug reports, please visit: https://github.com/ocetrac/oce
 
    installation
    dependencies
+   examples
    
 .. toctree::
    :maxdepth: 2

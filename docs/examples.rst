@@ -15,7 +15,7 @@ Start by importing numpy, xarray, and ocetrac using their standard abbreviations
     
 
 Import NCEP Surface Air Temperatures over North America
-------------------
+------------------------------------------------------------------------
 
 
 .. ipython:: python
@@ -26,7 +26,7 @@ Import NCEP Surface Air Temperatures over North America
     
     
 Define Anomalies & Extremes
-------------------
+------------------------------------------------------------------------
     
 Let's simply define anomalies by subtracting the monthly climatology.    
 
@@ -43,7 +43,7 @@ Let's simply define anomalies by subtracting the monthly climatology.
     
     
 Label & Track Hot Air Events with Ocetrac
-------------------    
+------------------------------------------------------------------------    
     
 
 .. ipython:: python
@@ -53,9 +53,9 @@ Label & Track Hot Air Events with Ocetrac
     Tracker =  ocetrac.Tracker(hot_air, mask, radius=2, min_size_quartile=0, timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
     blobs = Tracker.track()
     
+.. ipython:: python
+
     from matplotlib.colors import ListedColormap
     maxl = int(np.nanmax(blobs.values))
     cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
-
-    # Make a quick plot of the labeled objects identified by Ocetrac
     blobs.isel(time=0).plot(cmap= cm)

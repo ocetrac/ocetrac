@@ -13,7 +13,28 @@ class Tracker:
         
     def __init__(self, da, mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True):
         
+        
+
+        self.da = da
+        self.mask = mask
+        self.radius = radius
+        self.min_size_quartile = min_size_quartile
+        self.timedim = timedim
+        self.xdim = xdim
+        self.ydim = ydim   
+        self.positive = positive
+        
+        if ((timedim, ydim, xdim) != da.dims):
+            try:
+                da = da.transpose(timedim, ydim, xdim) 
+            except:
+                raise ValueError(f'Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(da.dims)}')
+
+            
+    def track(self):
         '''
+        Label and track image features.
+        
         Parameters
         ----------
         da : xarray.DataArray
@@ -39,31 +60,6 @@ class Tracker:
             
         positive : bool
             True if da values are expected to be positive, false if they are negative. Default argument is True
-
-        Returns
-        -------
-        labels : xarray.DataArray
-            Integer labels of the connected regions.
-        '''
-
-        self.da = da
-        self.mask = mask
-        self.radius = radius
-        self.min_size_quartile = min_size_quartile
-        self.timedim = timedim
-        self.xdim = xdim
-        self.ydim = ydim   
-        self.positive = positive
-        
-        if ((timedim, ydim, xdim) != da.dims):
-            try:
-                da = da.transpose(timedim, ydim, xdim) 
-            except:
-                raise ValueError(f'Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(da.dims)}')
-
-            
-    def track(self):
-        '''Label and track image features.
 
         Returns
         -------

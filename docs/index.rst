@@ -45,8 +45,6 @@ For recommendations or bug reports, please visit: https://github.com/ocetrac/oce
    SciPy 2021 Talk <https://ocetrac.github.io/scipy2021-talk/#/>
    GitHub Repo <https://github.com/ocetrac/ocetrac>
    api
-   package_structure
-   whats-new
    authors
    contributing
    wishlist

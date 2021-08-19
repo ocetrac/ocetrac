@@ -15,6 +15,11 @@ dependencies:
    - pandoc
    - pooch
    - pip
+   - matplotlib
+   - dask
+   - ocetrac
+   - cmip6_preprocessing
+   - intake
    - pip:
      - docrep<=0.2.7
      - nbsphinx
@@ -23,4 +28,3 @@ dependencies:
      - sphinx-copybutton
      - sphinxcontrib-srclinks
      - recommonmark
-     - ocetrac

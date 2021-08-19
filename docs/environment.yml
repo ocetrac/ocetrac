@@ -4,6 +4,9 @@ dependencies:
    # If your docs code examples depend on other packages add them here
    - numpy
    - xarray
+   - matplotlib
+   - dask
+   - intake
    # These are needed for the docs themselves
    - numpydoc
    - sphinx
@@ -15,11 +18,6 @@ dependencies:
    - pandoc
    - pooch
    - pip
-   - matplotlib
-   - dask
-   - ocetrac
-   - cmip6_preprocessing
-   - intake
    - pip:
      - docrep<=0.2.7
      - nbsphinx
@@ -28,3 +26,5 @@ dependencies:
      - sphinx-copybutton
      - sphinxcontrib-srclinks
      - recommonmark
+     - ocetrac
+     - cmip6_preprocessing

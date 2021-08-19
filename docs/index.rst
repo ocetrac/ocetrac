@@ -18,7 +18,10 @@ Ocetrac
    :target: https://anaconda.org/conda-forge/ocetrac
    
 .. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
-   :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest   
+   :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest 
+   
+.. image:: https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocetrac-feedstock?branchName=master
+   :target: https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=13414&branchName=maste 
 
 
 |

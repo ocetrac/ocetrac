@@ -58,6 +58,7 @@ extensions = [
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "sphinxcontrib.srclinks",
+    "sphinxcontrib.inkscapeconverter",
 ]
 
 autosummary_generate = True
@@ -114,6 +115,12 @@ exclude_patterns = ["_build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+
+# To get SVG and PDF plots for nbsphinx
+nbsphinx_execute_arguments = [
+    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.rc=figure.dpi=96",
+]
 
 # -- Options for HTML output -------------------------------------------------
 

@@ -1,5 +1,5 @@
 ---
-title: 'Ocetrac: A Python package to label and track unique geospatial features from gridded datasets'
+title: 'Ocetrac: A Python package to track the spatiotemporal evolution of marine heatwaves'
 tags:
   - Python
   - image processing
@@ -24,13 +24,13 @@ authors:
     orcid: 0000-0001-8295-0533
     affiliation: University of Washington
 affiliations:
-  - name: Lamont-Doherty Earth Observatory at Columbia University
+  - name: Lamont-Doherty Earth Observatory, Columbia University, Palisades, New York, USA
     index: 1
-  - name: National Center for Atmospheric Research, Computation and Information Systems Laboratory
+  - name: National Center for Atmospheric Research, Computation and Information Systems Laboratory, Boulder, Colorado, USA
     index: 2
-  - name: National Aeronautics and Space Administration, Ames Research Center
+  - name: National Aeronautics and Space Administration, Ames Research Center, California, USA
     index: 3
-  - name: University of Washingtion, School of Oceanography
+  - name: University of Washingtion, School of Oceanography, Seattle, Washington, USA
     index: 4
     
 date: 25 August 2021

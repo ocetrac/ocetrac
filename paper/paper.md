@@ -47,6 +47,6 @@ bibliography: paper.bib
 
 # External libraries used
     
-# Acknowlegements
+# Acknowledgements
 
 # References

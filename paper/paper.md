@@ -54,8 +54,13 @@ The `Ocetrac` package contains a global class called *Tracker* that includes a c
 
 # Example use case
 
+![Example workflow of identifying and track marine heatwaves using Ocetrac.\label{fig:thr}](fig1.png)
 
+<!-- 
+![Ocetrac boundaries compared to initial sea surface temperature anomalies.\label{fig:thr}](fig2.png)
 
+![Multiple Object Tracking; merging and splitting.\label{fig:thr}](fig3.png)
+ -->
 # External libraries used
 
 Data manipulatoin is conveniently handled using `numpy` [@numpy] and `xarray` [@xarray], and are integrated with `dask` [@dask] when possible for efficient parallelized computing. The detection algorithm uses a set of morphological operations contained within the `scipy` [@scipy] multidimensional image processing package. Detected objects are labeled and analyzed using the `scikit-image` [@scikit-image] measure module.

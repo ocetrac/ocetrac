@@ -1,5 +1,5 @@
 ---
-title: 'Ocetrac: A Python package to track the spatiotemporal evolution of marine heatwaves'
+title: '`Ocetrac`: A Python package to track the spatiotemporal evolution of marine heatwaves'
 tags:
   - Python
   - image processing

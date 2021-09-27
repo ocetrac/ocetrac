@@ -49,6 +49,7 @@ dependencies:
   - entrypoints=0.3=pyhd8ed1ab_1003
   - expat=2.4.1=h9c3ff4c_0
   - fasteners=0.16=pyhd8ed1ab_0
+  - ffmpeg=4.2.2=h20bf706_0
   - fontconfig=2.13.1=hba837de_1005
   - freetype=2.10.4=h0708190_1
   - fsspec=2021.8.1=pyhd8ed1ab_0
@@ -57,6 +58,8 @@ dependencies:
   - giflib=5.2.1=h36c2ea0_2
   - glib=2.68.4=h9c3ff4c_1
   - glib-tools=2.68.4=h9c3ff4c_1
+  - gmp=6.2.1=h2531618_2
+  - gnutls=3.6.15=he1e5248_0
   - gst-plugins-base=1.18.5=hf529b03_0
   - gstreamer=1.18.5=h76c114f_0
   - hdf4=4.2.15=h10796ff_3
@@ -79,6 +82,7 @@ dependencies:
   - jxrlib=1.1=h7f98852_2
   - kiwisolver=1.3.2=py39h1a9c180_0
   - krb5=1.19.2=hcc1bbae_0
+  - lame=3.100=h7b6447c_0
   - lcms2=2.12=hddcbb42_0
   - ld_impl_linux-64=2.36.1=hea4e1c9_2
   - lerc=2.2.1=h9c3ff4c_0
@@ -101,6 +105,7 @@ dependencies:
   - libglib=2.68.4=h174f98d_1
   - libgomp=11.2.0=h1d223b6_8
   - libiconv=1.16=h516909a_0
+  - libidn2=2.3.2=h7f8727e_0
   - liblapack=3.9.0=11_linux64_openblas
   - libllvm11=11.1.0=hf817b99_2
   - libnetcdf=4.8.1=nompi_hb3fd0d9_101
@@ -113,9 +118,12 @@ dependencies:
   - libsodium=1.0.18=h36c2ea0_1
   - libssh2=1.10.0=ha56f1ee_0
   - libstdcxx-ng=11.2.0=he4da1e4_8
+  - libtasn1=4.16.0=h27cfd23_0
   - libtiff=4.3.0=hf544144_0
+  - libunistring=0.9.10=h27cfd23_0
   - libuuid=2.32.1=h14c3975_1000
   - libvorbis=1.3.7=he1b5a44_0
+  - libvpx=1.7.0=h439df22_0
   - libwebp-base=1.2.1=h7f98852_0
   - libxcb=1.13=h7f98852_1003
   - libxkbcommon=1.0.3=he3ba5ed_0
@@ -136,6 +144,7 @@ dependencies:
   - ncurses=6.2=h58526e2_4
   - nest-asyncio=1.5.1=pyhd8ed1ab_0
   - netcdf4=1.5.7=nompi_py39h64b754b_102
+  - nettle=3.7.3=hbbd107a_1
   - networkx=2.3=py_0
   - nspr=4.30=h9c3ff4c_0
   - nss=3.69=hb5efdd6_0
@@ -143,6 +152,7 @@ dependencies:
   - numpy=1.21.2=py39hdbf815f_0
   - ocetrac=0.1.4=pyhd8ed1ab_0
   - olefile=0.46=pyh9f0ad1d_1
+  - openh264=2.1.0=hd408876_0
   - openjpeg=2.4.0=hb52868f_1
   - openssl=1.1.1l=h7f98852_0
   - packaging=21.0=pyhd8ed1ab_0
@@ -204,6 +214,7 @@ dependencies:
   - wcwidth=0.2.5=pyh9f0ad1d_2
   - wheel=0.37.0=pyhd8ed1ab_1
   - wrapt=1.12.1=py39h3811e60_3
+  - x264=1!157.20191217=h7b6447c_0
   - xarray=0.19.0=pyhd8ed1ab_1
   - xorg-libxau=1.0.9=h14c3975_0
   - xorg-libxdmcp=1.1.3=h516909a_0
@@ -216,4 +227,4 @@ dependencies:
   - zict=2.0.0=py_0
   - zlib=1.2.11=h516909a_1010
   - zstd=1.5.0=ha95c52a_0
-prefix: /srv/conda/envs/ocetrac
+prefix: /burg/home/hs3277/.conda/envs/ocetrac

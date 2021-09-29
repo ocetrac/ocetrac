@@ -22,7 +22,7 @@ dependencies:
      - docrep<=0.2.7
      - nbsphinx
      - jupyter_client
-     - sphinx_pangeo_theme
+     - sphinx_rtd_theme
      - sphinx-copybutton
      - sphinxcontrib-srclinks
      - recommonmark

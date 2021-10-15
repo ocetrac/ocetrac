@@ -56,7 +56,11 @@ The `Ocetrac` package contains a global class called *Tracker* that includes a c
 
 # Example use case
 
+`Ocetrac` is an analysis routine with several data analysis steps. For the purpose of detecting and tracking marine heatwaves, sea surface temperature anomalies (SSTAs) are calculated by removing the mean, trend, and seasonal cycle at each grid point. During this data preprocessing step, the 90th percentile of the SSTAs is computed, again at each location, and used as a threshold to identify candidate MHW points. The dataset is transformed into a 3-dimensional binary image where 1s signify candidate MHW points and 0s signify the background image. Object detection is performed using a set of mathematical morphological operations in unique sucession (closing then opening). These operations pass a structuring element across the image and manipulate the image to remove small features and smooth the borders of the larger features, and fill small holes within large feature clusters. The resulting objects form the inital set of detected MHWs.
+
 ![Example workflow of identifying and track marine heatwaves using Ocetrac.\label{fig:thr}](fig1.png)
+
+
 
 <!-- 
 ![Ocetrac boundaries compared to initial sea surface temperature anomalies.\label{fig:thr}](fig2.png)

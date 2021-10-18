@@ -56,12 +56,24 @@ The `Ocetrac` package contains a global class called *Tracker* that includes a c
 
 # Example use case
 
-`Ocetrac` is an analysis routine with several data analysis steps. For the purpose of detecting and tracking marine heatwaves, SST anomalies (SSTAs) are calculated by removing the mean, trend, and seasonal cycle at each grid point. During this data preprocessing step, the 90th percentile of SSTAs is computed, again at each location, and used as a threshold to identify candidate MHW grid points. The dataset is transformed into a 3-dimensional binary image where 1's signify candidate MHW points and 0's signify the background image. Object detection is performed using a set of mathematical morphological operations in unique sucession (closing then opening). These operations pass a structuring element across the image and manipulate the image to remove small features, smooth the borders of the larger features, and fill small holes within large feature clusters. The resulting objects form the inital set of detected MHWs and are further eliminated based on their area using a percentile threshold defined from the collective size distribution.
+`Ocetrac` is an analysis routine with several data analysis steps. For the purpose of detecting and tracking marine heatwaves, SST anomalies (SSTAs) are calculated by removing the mean, trend, and seasonal cycle at each grid point. During this data preprocessing step, the 90th percentile of SSTAs is computed, again at each location, and used as a threshold to identify candidate MHW grid points. 
+
+![Example time series defining marine heatwave candidate points at 47ºN, 149ºW using the 90th percentile threshold computed between 1982–2020.\label{fig:thr}](fig3.png)
+
+The preprocessing step above is performed at each grid point. The resulting dataset of MHW candidates is transformed into a 3-dimensional binary image where 1's signify candidate MHW points and 0's signify the background image. The goal is to identify groupings of 1's that define a MHW object and meet the specific spatial characteristics in terms of structure and size. 
+
+![A binary image of MHW candidate grid points containing features and objects.\label{fig:thr}](fig2.png)
+
+Object detection is performed using a set of mathematical morphological operations in unique sucession (closing then opening). These operations pass a structuring element across the image and manipulates the image to remove small features, smooth the borders of the larger features, and fill small holes within large feature clusters. The size of the structuring element is controlled by a distance parameter (R) from the origin. The structuring element is used to scan over the entire image to manipulate features based on the dilation and erosion of the image (Gonzalez and Woods, 2002). Erosion eliminates isolated and small features by shrinking features. Dilation is the opposite of erosion and is used to fill small holes within features, acting to gradually enlarge the boundaries of the feature region. 
+
+
+![2D structuring element used in morphological operations with a distance radius of 8.\label{fig:thr}](fig4.png)
+
+The resulting objects form the inital set of detected MHWs and are further eliminated based on their area using a percentile threshold defined from the total size distribution.
 
 ![Example workflow of identifying and track marine heatwaves using Ocetrac.\label{fig:thr}](fig1.png)
 
-
-
+The final step in `Ocetrac` involves multiple object tracking. 
 <!-- 
 ![Ocetrac boundaries compared to initial sea surface temperature anomalies.\label{fig:thr}](fig2.png)
 

@@ -166,10 +166,10 @@ def to_dataframe(blobs, ssta):
         os.makedirs(directory)
     os.chdir(directory)
     
-    num_events = int(np.nanmax(labels)) # number of events from Ocetrac
+    num_events = int(np.nanmax(blobs)) # number of events from Ocetrac
     print(f'CSV files are saved here: {directory}')
-    for i in tqdm(range(1,13)):#num_events+1)):
-        event = labels.where(labels==i, drop=True).reindex({"lon": labels.lon.values})
+    for i in tqdm(range(1,num_events+1)):
+        event = blobs.where(blobs==i, drop=True).reindex({"lon": blobs.lon.values})
         _save_csv(event, ssta)
     
     csvfiles = glob.glob(os.path.join(directory, '*.csv'))

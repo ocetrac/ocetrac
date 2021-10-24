@@ -3,6 +3,17 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 
+try:
+    from tqdm.auto import tqdm
+
+    tqdm_avail = True
+except:
+    warnings.warn(
+        "Optional dependency `tqdm` not found. This will make progressbars a lot nicer. \
+    Install with `conda install -c conda-forge tqdm`"
+    )
+    tqdm_avail = False
+    
 def _wrap(labels):
     ''' Impose periodic boundary and wrap labels, then reorder the labels'''
     first_column = labels[..., 0]

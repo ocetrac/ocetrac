@@ -3,6 +3,8 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 import warnings
+from skimage.measure import label as label_np
+from skimage.measure import regionprops 
 
 try:
     from tqdm.auto import tqdm

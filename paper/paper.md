@@ -18,22 +18,22 @@ authors:
   - name: David John Gagne
     orcid: 0000-0002-0469-2740
     affiliation: 2
-  - name: Daniel Whitt
-    affiliation: 3
   - name: LuAnne Thompson
     orcid: 0000-0001-8295-0533
+    affiliation: 3
+  - name: Daniel Whitt
     affiliation: 4
 affiliations:
   - name: Lamont-Doherty Earth Observatory, Columbia University, Palisades, New York, USA
     index: 1
   - name: National Center for Atmospheric Research, Computation and Information Systems Laboratory, Boulder, Colorado, USA
     index: 2
-  - name: National Aeronautics and Space Administration, Ames Research Center, California, USA
-    index: 3
   - name: University of Washingtion, School of Oceanography, Seattle, Washington, USA
+    index: 3
+  - name: National Aeronautics and Space Administration, Ames Research Center, California, USA
     index: 4
     
-date: 24 September 2021
+date: 15 November 2021
 bibliography: paper.bib
 
 ---

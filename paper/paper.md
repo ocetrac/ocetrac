@@ -46,13 +46,14 @@ Detection methods for MHWs are typically based on point-wise thresholding, where
 
 # Summary
 
-To overcome the complex spatiotemporal challenges of characterizing MHWs, we present the first known global detection and tracking algorithm for MHWs. By leveraging mathematical morphological operations from multidimensional image processing, `Ocetrac` provides new spatiotemporal metrics that can be probed to explore how past events evolved. Applied to over 40 years of observed global SST data, @Scannell20XX use `Ocetrac` to reveal new pathways that connect geographically distant MHWs. The tropical Pacific Ocean acts as a major conduit for extremely persist and long-lived MHWs ushered by oceanic and atmospheric teleconnections from the tropics to mid-latitudes. The detection algorithm can be tuned using an object boundary smoothing radius that is dependent on the horizontal resolution of the dataset. Additionally, a MHW minimum size thresholding parameter is imposed to filter out small-scale MHWs according to the full area distribution of detected objects. These criteria ensure that only substantially sized MHWs are identified and tracked. @Scannell20XX provide a systematic parameter sensitivity analysis and recommendations for different use cases.  
+To overcome the complex spatiotemporal challenges of characterizing MHWs, we present the first known global detection and tracking algorithm for MHWs. By leveraging  morphological operations from multidimensional image processing, `Ocetrac` provides new spatiotemporal metrics that can be probed to explore how observed and simulated events evolve. Applied to over 40 years of observed global SST data, @Scannell20XX use `Ocetrac` to reveal new pathways that connect geographically distant MHWs. The tropical Pacific Ocean acts as a major conduit for extremely persistent and long-lived MHWs genderated by oceanic and atmospheric teleconnections from the tropics to mid-latitudes. The detection algorithm can be tuned using an object boundary smoothing radius that is dependent on the horizontal resolution of the dataset. Additionally, a MHW minimum size thresholding parameter is imposed to filter out small-scale MHWs according to the full area distribution of detected objects. These criteria ensure that only substantially sized MHWs are identified and tracked. @Scannell20XX provide a systematic parameter sensitivity analysis and recommendations for different use cases.  
 
 `Ocetrac` contains a global class called *Tracker* that includes a collection of functions designed to detect, label, track, and characterize MHW objects. The primary algorithms are implemented using the Python programming language as a wrapper around many well-established numeric packages including numpy, xarray, dask, scipy, and scikit-image. A collection of [Jupyter notebooks](https://github.com/ocetrac/ocetrac/tree/main/notebooks) are provided to assist users through the entire workflow.
 
 # Statement of Need
 
-`Ocetrac` is intended to be used as a data processing tool for the extraction of MHW trajectories past, present, and future. It provides many useful metrics such as event size, location, intensity, and duration. We anticipate that these new metrics will be incorporated into machine learning forecasts to predict when and where MHWs are likely to occur, with the intent for operational use in warning vulnerable coastal communities of physical risk.  
+`Ocetrac` is intended to be used as a data processing tool for the extraction of MHW trajectories past, present, and future. It provides many useful metrics such as event size, location, intensity, and duration. We anticipate that these new metrics will be incorporated into machine learning forecasts to predict when and where MHWs are likely to occur, with the intent for operational use in warning vulnerable coastal communities of physical risk. 
+While our work focuses on tracking MHWs, the algorithm implemented in `Ocetrac` could be applied to the tracking of any geographically coherent spatiotemporal features.
 
 # Example use case
 
@@ -80,7 +81,7 @@ Data manipulation is conveniently handled using `numpy` [@numpy] and `xarray` [@
 
 # Acknowledgements
 
-This work is supported by the Gordon and Betty Moore Foundation grant No. XXXXX. This is a collaborative project between Columbia University, the National Center for Atmospheric Research (NCAR), National Aeronautics and Space Administration (NASA) Ames Research Center, and the University of Washington. We also received support from the Leonardo DiCaprio Foundation AI for Earth Innovation Grant co-sponsored by Microsoft. 
+Abernathey and Scannell were supported by the Gordon and Betty Moore Foundation grant No. 8434. This is a collaborative project between Columbia University, the National Center for Atmospheric Research (NCAR), National Aeronautics and Space Administration (NASA) Ames Research Center, and the University of Washington. We also received support from the Leonardo DiCaprio Foundation AI for Earth Innovation Grant co-sponsored by Microsoft. 
 
 # References
 

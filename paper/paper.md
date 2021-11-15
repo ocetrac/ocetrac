@@ -70,7 +70,7 @@ Object detection is performed using a set of mathematical morphological operatio
 
 ![2D structuring element used in morphological operations with a distance radius of 8.\label{fig:thr}](fig4.png)
 
-The resulting objects form the initial set of detected MHW objects, which are further eliminated based on their area using a percentile threshold defined from the total size distribution.
+The resulting objects form the initial set of detected MHW objects. Small objects are dropped based on their area using a percentile threshold defined from the total size distribution.
 
 The final step in `Ocetrac` involves multiple object tracking. MHWs are defined using a 3D centrosymmetric connectivity element, such that multiple objects that are either adjacent, diagonal, that overlap in time are connected and share a unique ID. There are two possible evolutions: (1) multiple objects merge to form a single event, or (2) a single object splits into multiple objects that retail the ID of the initial object. By design, any objects that have connectivity share an ID, allowing MHWs to contain multiple objects. 
 

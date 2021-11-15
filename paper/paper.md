@@ -22,6 +22,7 @@ authors:
     orcid: 0000-0001-8295-0533
     affiliation: 3
   - name: Daniel Whitt
+    orcid: 0000-0002-3209-5572
     affiliation: 4
 affiliations:
   - name: Lamont-Doherty Earth Observatory, Columbia University, Palisades, New York, USA

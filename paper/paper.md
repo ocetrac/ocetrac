@@ -85,6 +85,6 @@ Data manipulation is conveniently handled using `numpy` [@numpy] and `xarray` [@
 
 # Acknowledgements
 
-HAS, JJMB, and RPA were supported by the Gordon and Betty Moore Foundation grant No. 8434. HAS and LT received additional support from the Leonardo DiCaprio Foundation AI for Earth Innovation Grant co-sponsored by Microsoft. This material is based upon work supported by the National Center for Atmospheric Research (NCAR) Advanced Study Program Graduate Student (GVP) Fellowship. NCAR is a major facility sponsored by the National Science Foundation under Cooperative Agreement No. 1852977. DBW also acknowledges support from the NASA’s Earth science research and analysis program.
+HAS, JJMB, and RPA were supported by the Gordon and Betty Moore Foundation grant No. 8434. HAS and LT received additional support from the Leonardo DiCaprio Foundation AI for Earth Innovation Grant co-sponsored by Microsoft. This material is based upon work supported by the National Center for Atmospheric Research (NCAR) Advanced Study Program Graduate Student (GVP) Fellowship. NCAR is a major facility sponsored by the National Science Foundation under Cooperative Agreement No. 1852977. DBW also acknowledges support from the NASA Earth Science Research and Analysis Program.
 
 # References

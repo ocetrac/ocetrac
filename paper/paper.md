@@ -6,13 +6,13 @@ tags:
   - oceanography
   - extremes
 authors:
-  - name: Hillary Scannell
+  - name: Hillary A. Scannell
     orcid: 0000-0002-6604-1695
     affiliation: 1
-  - name: Julius Busecke
+  - name: Julius J. M. Busecke
     orcid: 0000-0001-8571-865X
     affiliation: 1
-  - name: Ryan Abernathey
+  - name: Ryan P. Abernathey
     orcid: 0000-0001-5999-4917
     affiliation: 1
   - name: David John Gagne
@@ -21,9 +21,9 @@ authors:
   - name: LuAnne Thompson
     orcid: 0000-0001-8295-0533
     affiliation: 3
-  - name: Daniel Whitt
+  - name: Daniel B. Whitt
     orcid: 0000-0002-3209-5572
-    affiliation: 4
+    affiliation: 2, 4
 affiliations:
   - name: Lamont-Doherty Earth Observatory, Columbia University, Palisades, New York, USA
     index: 1
@@ -34,7 +34,7 @@ affiliations:
   - name: National Aeronautics and Space Administration, Ames Research Center, California, USA
     index: 4
     
-date: 15 November 2021
+date: 17 November 2021
 bibliography: paper.bib
 
 ---
@@ -82,7 +82,7 @@ Data manipulation is conveniently handled using `numpy` [@numpy] and `xarray` [@
 
 # Acknowledgements
 
-Abernathey and Scannell were supported by the Gordon and Betty Moore Foundation grant No. 8434. This is a collaborative project between Columbia University, the National Center for Atmospheric Research (NCAR), National Aeronautics and Space Administration (NASA) Ames Research Center, and the University of Washington. We also received support from the Leonardo DiCaprio Foundation AI for Earth Innovation Grant co-sponsored by Microsoft. 
+HAS, JJMB, and RPA were supported by the Gordon and Betty Moore Foundation grant No. 8434. HAS and LT received additonal support from the Leonardo DiCaprio Foundation AI for Earth Innovation Grant co-sponsored by Microsoft. This material is based upon work supported by the National Center for Atmospheric Research (NCAR) Advanced Study Program Graduate Student (GVP) Fellowship. NCAR is a major facility sponsored by the National Science Foundation under Cooperative Agreement No. 1852977. DBW also acknowledges support from the NASA’s Earth science research and analysis program.
 
 # References
 

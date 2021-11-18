@@ -15,7 +15,7 @@ authors:
   - name: Ryan P. Abernathey
     orcid: 0000-0001-5999-4917
     affiliation: 1
-  - name: David John Gagne
+  - name: David John Gagne II
     orcid: 0000-0002-0469-2740
     affiliation: 2
   - name: LuAnne Thompson
@@ -31,7 +31,7 @@ affiliations:
     index: 2
   - name: University of Washingtion, School of Oceanography, Seattle, Washington, USA
     index: 3
-  - name: National Aeronautics and Space Administration, Ames Research Center, California, USA
+  - name: National Aeronautics and Space Administration, Ames Research Center, Moffett Field, California, USA
     index: 4
     
 date: 17 November 2021

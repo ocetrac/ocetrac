@@ -3,13 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  ############## These will have to be adjusted to your specific project
   - numpy
   - scipy
   - xarray
   - dask
   - scikit-image
-  ##############
+  - tqdm
   - pytest
   - pip:
     - codecov

@@ -186,17 +186,18 @@ class Tracker:
                                 vectorize=True,
                                 dask='parallelized')
 
-
         labels = xr.DataArray(labels, dims=binary_images.dims, coords=binary_images.coords)
-        labels = labels.where(labels>0, drop=False, other=np.nan)  
-
+        labels = labels.where(labels>0, drop=False, other=np.nan)
+        
         # The labels are repeated each time step, therefore we relabel them to be consecutive
         for i in range(1, labels.shape[0]):
-            labels[i,:,:] = labels[i,:,:].values + labels[i-1,:,:].max().values
+            max_label = np.nanmax(labels[i-1,:,:])
+            max_label = 0. if np.isnan(max_label) else max_label
+            labels[i,:,:] = labels[i,:,:].values + max_label
 
         labels = labels.where(labels>0, drop=False, other=0)  
         labels_wrapped, N_initial = self._wrap(np.array(labels))
-
+        
         # Calculate Area of each object and keep objects larger than threshold
         props = regionprops(labels_wrapped.astype('int'))
         

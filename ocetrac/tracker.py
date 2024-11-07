@@ -191,8 +191,8 @@ class Tracker:
         
         # The labels are repeated each time step, therefore we relabel them to be consecutive
         for i in range(1, labels.shape[0]):
-            max_label = np.nanmax(labels[i-1,:,:])
-            max_label = 0. if np.isnan(max_label) else max_label
+            max_label = labels[i-1,:,:].max().values
+            max_label = 0 if np.isnan(max_label) else max_label
             labels[i,:,:] = labels[i,:,:].values + max_label
 
         labels = labels.where(labels>0, drop=False, other=0)  

@@ -185,16 +185,23 @@ class Tracker:
                                 output_dtypes=[binary_images.dtype],
                                 vectorize=True,
                                 dask='parallelized')
-
+        
         labels = xr.DataArray(labels, dims=binary_images.dims, coords=binary_images.coords)
         labels = labels.where(labels>0, drop=False, other=np.nan)
         
         # The labels are repeated each time step, therefore we relabel them to be consecutive
+        # We keep track of the maximum label so far, so that we can increment the proceeding ones
+        max_label = 0.0
         for i in range(1, labels.shape[0]):
-            max_label = labels[i-1,:,:].max().values
-            max_label = 0 if np.isnan(max_label) else max_label
+            # Handle the corner case for which there are no events, by replacing the NaN
+            # returned by the maximum method with the maximum-so-far.
+            potential_max_label = labels[i-1,:,:].max().values
+            max_label = max_label if np.isnan(potential_max_label) else potential_max_label
+            
+            # Increment the labels so that each iteration's event labels are unique and 
+            # increasing consecutively
             labels[i,:,:] = labels[i,:,:].values + max_label
-
+        
         labels = labels.where(labels>0, drop=False, other=0)  
         labels_wrapped, N_initial = self._wrap(np.array(labels))
         

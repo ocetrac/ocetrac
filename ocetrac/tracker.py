@@ -186,7 +186,7 @@ class Tracker:
             bitmap_binary_padded = np.pad(
                 bitmap_binary, ((diameter, diameter), (diameter, diameter)), mode="wrap"
             )
-            # If diameter == 1, the structuring element is just an individual pixel, so
+            # If the radius is equal to 1, the structuring element is just an individual pixel, so
             # it is faster to just skip the calls to `binary_closing` and `binary_opening`
             if self.radius == 1:
                 s2 = bitmap_binary_padded

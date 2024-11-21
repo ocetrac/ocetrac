@@ -54,6 +54,12 @@ class Tracker:
 
         radius : int
             The size of the structuring element used in morphological opening and closing. Radius specified by the number of grid units.
+            
+            Structuring elements are defined such that cells are included if their distance from the origin in index space is
+            strictly less than the radius. For example, a radius of 1 means that the structuring element includes just an
+            individual pixel (such that applying the morhological closing and opening just returns the original binary array),
+            while a radius of 2 would additionally include the eight cells cells adjacent to the origin. As the radius increases,
+            the shape of the structure element asymptotes to a circle centered on the origin.
 
         min_size_quartile : float
             The quantile used to define the threshold of the smallest area object retained in tracking. Value should be between 0 and 1.
@@ -147,10 +153,13 @@ class Tracker:
         da     : xarray.DataArray
                 The data to label
         radius : int
-                Length of grid spacing to define the radius of the structuring element used in morphological closing and opening.
-                A radius of 1 means that the structuring element includes just the pixels themselves, i.e. there is no 
-                morhological closing and opening. A radius of 0 does the same thing, but skips the operation since it does not
-                do anything anyways.
+                Length of grid spacing that defines the radius of the structuring element used in morphological closing and opening.
+                
+                Structuring elements are defined such that cells are included if their distance from the origin in index space is
+                strictly less than the radius. For example, a radius of 1 means that the structuring element includes just an
+                individual pixel (such that applying the morhological closing and opening just returns the original binary array),
+                while a radius of 2 would additionally include the eight cells cells adjacent to the origin. As the radius increases,
+                the shape of the structure element asymptotes to a circle centered on the origin.
 
         """
 
@@ -174,17 +183,17 @@ class Tracker:
             bitmap_binary_padded = np.pad(
                 bitmap_binary, ((diameter, diameter), (diameter, diameter)), mode="wrap"
             )
-            # If diameter == 0, just skip binary closing and opening!
-            if diameter == 0:
+            # If diameter == 1, the structuring element is just an individual pixel, so
+            # it is faster to just skip the calls to `binary_closing` and `binary_opening`
+            if self.radius == 1:
                 s2 = bitmap_binary_padded
-            elif diameter > 0:
+            elif self.radius > 1:
                 s1 = scipy.ndimage.binary_closing(bitmap_binary_padded, se, iterations=1)
                 s2 = scipy.ndimage.binary_opening(s1, se, iterations=1)
             else:
-                raise ValueError("radius must be greater than or equal to zero")
+                raise ValueError("radius must be an integer greater than or equal to 1")
                 
-            n0, n1 = s2.shape
-            unpadded = s2[diameter:n0-diameter, diameter:n1-diameter]
+            unpadded = s2[diameter:-diameter, diameter:-diameter]
             return unpadded
 
         mo_binary = xr.apply_ufunc(

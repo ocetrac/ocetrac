@@ -63,6 +63,9 @@ class Tracker:
 
         min_size_quartile : float
             The quantile used to define the threshold of the smallest area object retained in tracking. Value should be between 0 and 1.
+            A value of exactly 0 means objects of any size are retained while a value of 1 retains just the single largest event.
+            Higher values of `min_size_quartile` result in improved performance because less events are stored in memory and need to be
+            compared.
 
         timedim : str
             The name of the time dimension
@@ -71,7 +74,7 @@ class Tracker:
             The name of the x dimension
 
         ydim : str
-            The namne of the y dimension
+            The name of the y dimension
 
         positive : bool
             True if da values are expected to be positive, false if they are negative. Default argument is True

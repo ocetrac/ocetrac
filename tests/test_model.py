@@ -255,3 +255,36 @@ def test_wrap(
     labels_wrapped, N_final = tracker._wrap(labels)
 
     assert N_final == 6
+
+
+def test_nan_timestep(
+    example_data,
+    radius=8,
+    min_size_quartile=0.75,
+    timedim="time",
+    xdim="lat",
+    ydim="lon",
+    positive=True,
+):
+    Anom, mask = example_data
+    Anom.loc[{"time": 2}] = Anom.sel(time=2) * 0
+    tracker = Tracker(
+        Anom.chunk({"time": 1}),
+        mask,
+        radius,
+        min_size_quartile,
+        timedim,
+        xdim,
+        ydim,
+        positive,
+    )
+    binary_images = tracker._morphological_operations()
+    binary_images_with_mask = _apply_mask(binary_images, mask)
+    area, min_area, binary_labels, N_initial = tracker._filter_area(
+        binary_images_with_mask
+    )
+    # PR 33 fixes issue where a timestep with no objects resulted in
+    # no labeled objects at all future timesteps.
+    labels_in_time = binary_labels.max(("lat", "lon"))
+    assert labels_in_time.sel(time=2) == 0
+    assert labels_in_time.sel(time=3) != 0

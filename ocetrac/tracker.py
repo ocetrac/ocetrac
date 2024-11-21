@@ -147,7 +147,10 @@ class Tracker:
         da     : xarray.DataArray
                 The data to label
         radius : int
-                Length of grid spacing to define the radius of the structing element used in morphological closing and opening.
+                Length of grid spacing to define the radius of the structuring element used in morphological closing and opening.
+                A radius of 1 means that the structuring element includes just the pixels themselves, i.e. there is no 
+                morhological closing and opening. A radius of 0 does the same thing, but skips the operation since it does not
+                do anything anyways.
 
         """
 

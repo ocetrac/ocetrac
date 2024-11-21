@@ -171,9 +171,17 @@ class Tracker:
             bitmap_binary_padded = np.pad(
                 bitmap_binary, ((diameter, diameter), (diameter, diameter)), mode="wrap"
             )
-            s1 = scipy.ndimage.binary_closing(bitmap_binary_padded, se, iterations=1)
-            s2 = scipy.ndimage.binary_opening(s1, se, iterations=1)
-            unpadded = s2[diameter:-diameter, diameter:-diameter]
+            # If diameter == 0, just skip binary closing and opening!
+            if diameter == 0:
+                s2 = bitmap_binary_padded
+            elif diameter > 0:
+                s1 = scipy.ndimage.binary_closing(bitmap_binary_padded, se, iterations=1)
+                s2 = scipy.ndimage.binary_opening(s1, se, iterations=1)
+            else:
+                raise ValueError("radius must be greater than or equal to zero")
+                
+            n0, n1 = s2.shape
+            unpadded = s2[diameter:n0-diameter, diameter:n1-diameter]
             return unpadded
 
         mo_binary = xr.apply_ufunc(

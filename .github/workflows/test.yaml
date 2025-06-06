@@ -11,16 +11,16 @@ jobs:
         os: ["ubuntu-latest"]
         python-version: ["3.7", "3.8"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Cache conda
-        uses: actions/cache@v4
+        uses: actions/cache@v1
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
         with:
           path: ~/conda_pkgs_dir
           key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}.yml') }}
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v2
         with:
           # mamba-version: "*" # activate this to build with mamba.
           # channels: conda-forge, defaults # These need to be specified to use mamba
@@ -38,7 +38,7 @@ jobs:
         run: |
           pytest --cov=./ --cov-report=xml
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v1
         with:
           file: ./coverage.xml
           flags: unittests

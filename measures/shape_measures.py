@@ -49,7 +49,7 @@ class ShapeMeasures:
         return np.sum(dlon * dlat)
 
     @log_execution_time()
-    def calculate_spatial_extents(self, one_obj: xr.Dataset) -> dict:
+    def calc_spatial_extents(self, one_obj: xr.Dataset) -> dict:
         """Computes spatial extents and summary statistics."""
         spatial_extents = []
         coords_full = []
@@ -72,13 +72,12 @@ class ShapeMeasures:
             'coords_full': coords_full,
             'spatial_extents': spatial_extents,
             'max_spatial_extent': max(spatial_extents, default=0.0),
-            'max_spatial_extent_time': np.argmax(spatial_extents) if spatial_extents else -1,
             'mean_spatial_extent': np.mean(spatial_extents) if spatial_extents else 0.0,
             'cumulative_spatial_extent': np.sum(spatial_extents) if spatial_extents else 0.0,
         }
 
     @log_execution_time()
-    def calculate_perimeter(self, one_obj: xr.Dataset) -> List[float]:
+    def calc_perimeter(self, one_obj: xr.Dataset) -> List[float]:
         """Computes the perimeter of objects using contour detection."""
         # Convert longitude from [0, 360] to [-180, 180]
         long_range = interp1d([0, 360], [-180, 180])

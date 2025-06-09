@@ -11,7 +11,7 @@ python:
    install:
       - requirements: docs/requirements.txt
       - method: setuptools
-        path: package
+        path: .
 sphinx:
   fail_on_warning: true
   configuration: docs/conf.py

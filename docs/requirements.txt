@@ -1,5 +1,6 @@
 cython
 ipython
+myst-parser
 numpy
 numpydoc
 sphinx

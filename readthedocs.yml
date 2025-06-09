@@ -4,13 +4,14 @@ build:
   tools:
     python: "3.8"
 
-conda:
-    environment: docs/environment.yml
-# python:
-#   #  version: 3.8
-#    install:
-#       - method: setuptools
-#         path: package
+# conda:
+#     environment: docs/environment.yml
+python:
+  #  version: 3.8
+   install:
+      - requirements: docs/requirements.txt
+      - method: setuptools
+        path: package
 sphinx:
   fail_on_warning: true
   configuration: docs/conf.py

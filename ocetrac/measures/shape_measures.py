@@ -10,7 +10,17 @@ import functools
 import time
 
 def log_execution_time(toggle_attr='use_decorators'):
-    """Decorator to log execution time, which can be toggled on/off using a class attribute."""
+    """Decorator to log execution time, which can be toggled on/off using a class attribute.
+
+    Parameters
+    ----------
+    toggle_attr : str
+        The attribute of the class that controls whether the decorator is active.
+    Returns
+    -------
+    decorator : function
+        A decorator that wraps the function to log its execution time.
+    """
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -29,12 +39,16 @@ def log_execution_time(toggle_attr='use_decorators'):
 class ShapeMeasures:
     def __init__(self, lat_resolution: float = 110.574, lon_resolution: float = 111.320, use_decorators: bool = True):
         """
-        A class to compute shape-based metrics for geospatial objects.
+        Initializes the ShapeMeasures class with latitude and longitude resolutions and decorater usage.
 
-        Parameters:
-            lat_resolution (float): Resolution of latitude in km per degree.
-            lon_resolution (float): Resolution of longitude in km per degree at the equator.
-            use_decorators (bool): Toggle for using decorators like execution time logging.
+        Parameters
+        ----------
+        lat_resolution : float
+            Resolution in kilometers for latitude (default is 110.574 km)
+        lon_resolution : float
+            Resolution in kilometers for longitude (default is 111.320 km)
+        use_decorators : bool
+            If True, decorators will be used to log execution time (default is True)
         """
         self.lat_resolution = lat_resolution
         self.lon_resolution = lon_resolution
@@ -42,7 +56,20 @@ class ShapeMeasures:
 
     @log_execution_time()
     def calculate_area(self, lats: List[float], lons: List[float]) -> float:
-        """Computes area in square kilometers."""
+        """Calculates area in square kilometers.
+        
+        Parameters
+        ----------
+        lats : List[float]
+            List of latitudes in degrees.
+        lons : List[float]
+            List of longitudes in degrees.
+
+        Returns
+        -------
+        float
+            Area in square kilometers.
+        """
         y, x = np.array(lats), np.array(lons)
         dlon = np.cos(np.radians(y)) * self.lon_resolution
         dlat = self.lat_resolution * np.ones(len(dlon))
@@ -50,7 +77,23 @@ class ShapeMeasures:
 
     @log_execution_time()
     def calc_spatial_extents(self, one_obj: xr.Dataset) -> dict:
-        """Computes spatial extents and summary statistics."""
+        """Calculates spatial extents and summary statistics for event.
+
+        Parameters
+        ----------
+        one_obj : xr.Dataset
+            Dataset containing labels with 'lat' and 'lon' dimensions.
+        
+        Returns
+        -------
+        dict
+            Dictionary containing:
+            - 'coords_full': List of coordinates for each time step.
+            - 'spatial_extents': List of spatial extents for each time step.
+            - 'max_spatial_extent': Maximum spatial extent across all time steps.
+            - 'mean_spatial_extent': Mean spatial extent across all time steps.
+            - 'cumulative_spatial_extent': Cumulative spatial extent across all time steps.
+        """
         spatial_extents = []
         coords_full = []
 
@@ -78,52 +121,55 @@ class ShapeMeasures:
 
     @log_execution_time()
     def calc_perimeter(self, one_obj: xr.Dataset) -> List[float]:
-        """Computes the perimeter of objects using contour detection."""
-        # Convert longitude from [0, 360] to [-180, 180]
-        long_range = interp1d([0, 360], [-180, 180])
+        """Calculates the perimeter of objects using contour detection.
+        
+        Parameters
+        ----------
+        one_obj : xr.Dataset
+            Dataset containing labels with 'lat' and 'lon' dimensions.
+        Returns
+        -------
+        List[float]
+            List of perimeters for each time step in kilometers.
+        """
+        long_range = interp1d([0, 360], [-180, 180]) # Convert longitude from [0, 360] to [-180, 180]
+        binary_mask = one_obj.labels.fillna(0).data # Replace NaN values with 0
 
-        # Replace NaN values with 0 and extract the data
-        binary_mask = one_obj.labels.fillna(0).data
-
-        # Precompute latitude and longitude values
         lat_values = one_obj.lat.values
         lon_values = one_obj.lon.values
 
-        # Initialize the list to store perimeters
         perimeters = []
-
-        # Iterate over each time step
         for i in range(len(one_obj.labels.time)):
-            # Find contours in the binary mask for the current time step
-            contours = find_contours(binary_mask[i], level=0.5)
-
-            # Initialize distances for the current time step
+            contours = find_contours(binary_mask[i], level=0.5) # Find contours in the binary mask
             distances = []
 
-            # Iterate over each contour
             for contour in contours:
-                # Extract latitudes and longitudes from the contour
                 lats = lat_values[contour[:, 0].astype(int)]
                 lons = lon_values[contour[:, 1].astype(int)]
-
-                # Convert longitudes to the range [-180, 180]
                 coords = list(zip(lats, long_range(lons)))
 
-                # Calculate distances between consecutive points in the contour
                 for ind in range(len(coords) - 1):
                     distances.append(haversine(coords[ind], coords[ind + 1], Unit.KILOMETERS))
-
-                # Close the contour loop by connecting the last point to the first
                 distances.append(haversine(coords[-1], coords[0], Unit.KILOMETERS))
-
-            # Sum the distances to get the perimeter for the current time step
             perimeters.append(np.sum(distances))
-
         return perimeters
 
     @log_execution_time()
     def calc_complement_to_deformation(self, coords_full: List[List[Tuple[float, float]]], spatial_extents: List[float]) -> np.ndarray:
-        """Computes complement to deformation ratio for consecutive timesteps."""
+        """Calculates complement to deformation ratio for consecutive timesteps.
+        
+        Parameters
+        ----------
+        coords_full : List[List[Tuple[float, float]]]
+            List of coordinates for each time step, where each coordinate is a tuple of (latitude, longitude).
+        spatial_extents : List[float]
+            List of spatial extents for each time step in square kilometers.
+        
+        Returns
+        -------
+        np.ndarray
+            Array of shared area ratios for consecutive time steps.
+        """
         shared_area_ratios = []
         for i in range(len(coords_full) - 1):
             shared_coords = set(coords_full[i]) & set(coords_full[i + 1])
@@ -137,72 +183,82 @@ class ShapeMeasures:
 
     @log_execution_time()
     def calc_deformation(self, shared_area_ratios: List[float]) -> np.ndarray:
-        """Computes deformation as 1 - shared area ratio."""
+        """Calculates deformation as 1 - shared area ratio.
+
+        Parameters
+        ----------
+        shared_area_ratios : List[float]
+            List of shared area ratios for consecutive time steps.
+
+        Returns
+        -------
+        np.ndarray
+            Array of deformation values for consecutive time steps.
+        """
         return 1 - np.array(shared_area_ratios)
 
     @log_execution_time()
     def calc_ratio_convexhullarea_vs_area(self, one_obj: xr.Dataset) -> List[float]:
-        """Computes the ratio of object area to convex hull area."""
-        # Initialize the list to store the ratios
+        """Calculates the ratio of object area to convex hull area.
+
+        Parameters
+        ----------
+        one_obj : xr.Dataset
+            Dataset containing labels with 'lat' and 'lon' dimensions.
+        
+        Returns
+        -------
+        Tuple[List[float], List[float]]
+            A tuple containing:
+            - List of convex hull areas for each time step.
+            - List of ratios of object area to convex hull area for each time step.
+        """
         ratios = []
         convex_hull_areas = []
-        # Create a binary mask where values > 0 are set to 1 and NaNs are set to 0
-        binary_mask = one_obj.labels.where(one_obj.labels > 0, 0).fillna(0)
 
-        # Iterate over each time step
+        binary_mask = one_obj.labels.where(one_obj.labels > 0, 0).fillna(0) # Create a binary mask where values > 0 are set to 1 and NaNs are set to 0
+
         for i in range(len(one_obj.labels.time)):
-            # Extract the object labels for the current time step
             one_obj_one_timestep = one_obj.labels[i, :, :]
-
-            # Stack the latitude and longitude dimensions into a single dimension for easier processing
             obj_onetimestep_stacked = one_obj_one_timestep.stack(zipcoords=['lat', 'lon'])
 
-            # Drop NaN values and extract the coordinates of the object
             intermed = obj_onetimestep_stacked.dropna(dim='zipcoords').zipcoords.values
 
-            # Unpack the latitude and longitude values from the coordinates
             lats, lons = zip(*intermed)
 
-            # Calculate the area of the object using the helper function
             object_area = self.calculate_area(lats, lons)
-
-            # Calculate the convex hull of the binary mask for the current time step
             convex_hull = convex_hull_image(binary_mask[i, :, :])
 
-            # Extract the coordinates of the convex hull
             convex_hull_coords = np.column_stack(np.where(convex_hull))
 
-            # Convert pixel coordinates to latitude and longitude
             lats = one_obj.lat.values[convex_hull_coords[:, 0]]
             lons = one_obj.lon.values[convex_hull_coords[:, 1]]
 
-            # Calculate the area of the convex hull using the helper function
             convex_hull_area = self.calculate_area(lats, lons)
             convex_hull_areas.append(convex_hull_area)
-            # Handle edge case: convex hull area is zero
             if convex_hull_area == 0:
                 ratios.append(0.0)  # Append 0 if convex hull area is zero
                 continue
-
-            # Calculate the ratio of object area to convex hull area
             ratio = object_area / convex_hull_area
-
-            # Append the ratio to the list
             ratios.append(ratio)
-
         return convex_hull_areas, ratios
 
     @log_execution_time()
     def calc_circularity(self, area, perimeter):
-        """
-        Calculate circularity given area and perimeter.
+        """Calculates circularity given area and perimeter.
 
-        Parameters:
-        area (float or list of floats): The area of the object(s).
-        perimeter (float or list of floats): The perimeter of the object(s).
-
-        Returns:
-        float or list of floats: Circularity value(s).
+        Parameters
+        ----------
+        area : float or list of floats
+            Area of the shape(s) in square kilometers.
+        perimeter : float or list of floats
+            Perimeter of the shape(s) in kilometers.
+        
+        Returns
+        -------
+        float or list of floats
+            Circularity value(s) calculated as 4 * pi * area / perimeter^2.
+            Returns NaN if perimeter is zero to avoid division by zero.
         """
         if isinstance(area, list) and isinstance(perimeter, list):
             return [

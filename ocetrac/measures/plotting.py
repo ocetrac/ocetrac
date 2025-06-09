@@ -1,3 +1,8 @@
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import List, Tuple
+
 def plot_displacement(
     coordinate_list: List[Tuple[float, float]], 
     intensity_array: xr.DataArray,

@@ -17,7 +17,11 @@ from typing import List, Tuple, Dict
 from math import atan2, degrees
 
 class MotionMeasures:
-    """Class for calculating motion characteristics of labeled geospatial objects."""
+    """Class for calculating motion characteristics of labeled geospatial objects:
+    
+    Provides methods for tracking object movement through centroid and center of mass calculations,  
+    displacement measures.
+    """
     
     def __init__(self, use_decorators: bool = True):
         """
@@ -31,7 +35,22 @@ class MotionMeasures:
         self.use_decorators = use_decorators
 
     def _calculate_com(self, intensity_image: xr.DataArray) -> List[Tuple[float, float]]:
-        """Calculate center of mass coordinates from intensity image."""
+        """Calculate center of mass coordinates from intensity image.
+
+        Parameters
+        ----------
+        intensity_image : xr.DataArray
+            Intensity values with dimensions (lat, lon)
+        
+        Returns
+        -------
+        List[Tuple[float, float]]
+            List containing single (latitude, longitude) center of mass coordinate
+        
+        Notes
+        -----
+        - Handles NaN values by filling with 0
+        """
         img = intensity_image.fillna(0)
         com = ndimage.center_of_mass(img.data)
         centroid = (float(img.lat[round(com[0])].values),
@@ -42,7 +61,18 @@ class MotionMeasures:
         return [centroid]
 
     def _label_regions(self, binary_data: np.ndarray) -> np.ndarray:
-        """Label connected regions in binary data."""
+        """Label connected regions in binary data.
+
+        Parameters
+        ----------
+        binary_data : np.ndarray
+            Binary data array with dimensions (lat, lon)
+        
+        Returns
+        -------
+        np.ndarray 
+            Labeled regions with unique integer labels for each region
+        """
         binary_data = np.nan_to_num(binary_data, nan=0)
         binary_data = np.where(np.isfinite(binary_data), binary_data, 0)
         return label_np(binary_data, background=0)
@@ -57,11 +87,16 @@ class MotionMeasures:
             Labeled regions with dimensions (time, lat, lon)
         timestep : int
             Index of timestep to analyze
-
+        
         Returns
         -------
         List[Tuple[float, float]]
-            List of (latitude, longitude) centroid coordinates
+            List of (latitude, longitude) centroid coordinates for each region
+        
+        Notes
+        -----
+        - Handles NaN values by filling with 0
+        - Handles edge cases for longitude wrapping
         """
         timestep_data = labels.isel(time=timestep)
         labeled = self._label_regions(timestep_data.values)
@@ -125,8 +160,8 @@ class MotionMeasures:
         ----------
         labels : xr.DataArray
             Labeled regions with dimensions (time, lat, lon)
-        intensity : xr.DataArray  
-            Intensity values (e.g. temperature anomalies)
+        intensity : xr.DataArray
+            Intensity values with dimensions (time, lat, lon)
         timestep : int
             Index of timestep to analyze
 
@@ -264,13 +299,13 @@ class MotionMeasures:
             - mean_delta_lon: Mean longitudinal displacement
             - mean_delta_lat: Mean latitudinal displacement  
             - mean_angle: Mean movement angle (degrees)
-            - direction: Direction classification
+            - direction: Direction
             - movement_count: Number of movements analyzed
         """
         if len(coords) < 2:
-            return {"error": "At least 2 coordinates needed"}
+            return {"error": "2 coordinates needed"}
         
-        # Calculate movement vectors
+        # Movement vectors
         delta_lons = []
         delta_lats = []
         for i in range(len(coords)-1):
@@ -279,12 +314,11 @@ class MotionMeasures:
             delta_lons.append(lon2 - lon1)
             delta_lats.append(lat2 - lat1)
         
-        # Calculate mean direction
+        # Mean direction
         mean_delta_lon = np.mean(delta_lons)
         mean_delta_lat = np.mean(delta_lats)
         mean_angle = degrees(atan2(mean_delta_lat, mean_delta_lon)) % 360
         
-        # Classify direction
         if -45 <= mean_angle < 45 or 315 <= mean_angle < 360:
             direction = "eastward (zonal-dominated)"
         elif 45 <= mean_angle < 135:

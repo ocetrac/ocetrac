@@ -1,9 +1,13 @@
+"""
+intensity_measures.py
+"""
+
 import xarray as xr 
 
 def calculate_intensity_metrics(anomalies: xr.DataArray, 
                               quantile_threshold: float = 0.9) -> dict:
     """
-    Calculate comprehensive intensity metrics from anomaly data.
+    Calculate intensity metrics from anomaly data.
     
     Parameters
     ----------

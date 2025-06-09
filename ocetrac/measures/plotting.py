@@ -1,8 +1,7 @@
-
-from typing import List, Tuple
+import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-import xarray as xr
+from typing import List, Tuple
 
 def plot_displacement(
     coordinate_list: List[Tuple[float, float]], 

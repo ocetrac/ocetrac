@@ -6,11 +6,11 @@ build:
 
 conda:
     environment: docs/environment.yml
-python:
-  #  version: 3.8
-   install:
-      - method: setuptools
-        path: package
+# python:
+#   #  version: 3.8
+#    install:
+#       - method: setuptools
+#         path: package
 sphinx:
   fail_on_warning: true
   configuration: docs/conf.py

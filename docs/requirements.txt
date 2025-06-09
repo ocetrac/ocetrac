@@ -1,5 +1,5 @@
-sphinx==1.6.7
-ipython
-numpydoc
 cython
+ipython
 numpy
+numpydoc
+sphinx#==1.6.7

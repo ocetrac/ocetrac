@@ -6,7 +6,7 @@ from typing import List, Tuple
 def plot_displacement(
     coordinate_list: List[Tuple[float, float]], 
     intensity_array: xr.DataArray,
-    cmap: str = 'Greys',
+    cmap: str = 'viridis',
     quiver_color: str = 'Orange',
     text_color: str = 'k',
     marker_color: str = 'Red',
@@ -49,17 +49,17 @@ def plot_displacement(
     None
         Displays the plot.
     """
-    summed_over_all_timesteps = intensity_array.sum(axis=0)
+    plt.figure(figsize=figsize)
     
-    summed_over_all_timesteps = xr.where(summed_over_all_timesteps == 0., np.nan, summed_over_all_timesteps)
-    
+    # Plot the contourf of the first timestep
+    intensity_array[:,:,:].sum(dim='time').plot.contourf(cmap=cmap, vmin=vmin, vmax=vmax)
+        
+    # Process and plot the centroid path
     y_val_cent, x_val_cent = zip(*coordinate_list)
     
     dx = [j - i for i, j in zip(x_val_cent[:-1], x_val_cent[1:])]
     dy = [j - i for i, j in zip(y_val_cent[:-1], y_val_cent[1:])]
     
-    plt.figure(figsize=figsize)
-        
     plt.quiver(
         x_val_cent[:-1], y_val_cent[:-1], dx, dy, 
         width=quiver_width, color=quiver_color, 
@@ -67,14 +67,12 @@ def plot_displacement(
     )
     
     for i, (x, y) in enumerate(zip(x_val_cent, y_val_cent)):
-        plt.text(x+1, y+1, str(i), fontsize=text_fontsize, c=text_color, ha='center', va='center')
-        plt.scatter(x, y, c=marker_color, edgecolor='black', zorder=5)
+        plt.text(x+1, y+1, str(i), fontsize=text_fontsize, c=text_color, ha='center', va='center', zorder=20)
+        plt.scatter(x, y, c=marker_color, edgecolor='black', zorder=15)
     
     plt.scatter(x_val_cent[0], y_val_cent[0], c=marker_color, edgecolor='black', zorder=5, label='Start')
     plt.scatter(x_val_cent[-1], y_val_cent[-1], c=marker_color, edgecolor='black', zorder=5, label='End')
     plt.legend(loc='upper right')
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
-    plt.xlim(0,360)
-    plt.ylim(-90,90)
     plt.show()

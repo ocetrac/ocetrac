@@ -144,10 +144,15 @@ class MotionMeasures:
                         labels_new = labels_new.where(merged_bin > 0, other=np.nan)
                         props = regionprops(labels_new.fillna(0).astype(int).values)
                         for p in props:
-                            centroids.append(
-                                (float(labels_new.lat[round(p.centroid[0])].values),
-                                float(labels_new.lon[round(p.centroid[1])].values))
-                            )
+                            row, col = p.centroid
+                            lat_cent = np.interp(row, np.arange(labeled.sizes['lat']), labeled.lat.values)
+                            lon_cent = np.interp(col, np.arange(labeled.sizes['lon']), labeled.lon.values)
+                            centroids.append((float(lat_cent), float(lon_cent)))
+
+                            # centroids.append(
+                            #     (float(labels_new.lat[round(p.centroid[0])].values),
+                            #     float(labels_new.lon[round(p.centroid[1])].values))
+                            # )
 
         return list(set(centroids))
 
@@ -233,29 +238,17 @@ class MotionMeasures:
             - List of displacement distances between timesteps (km)
         """
         centroids = []
-        geo_coords = []
-        
         for i in range(labels.shape[0]):
-            binarized = xr.where(labels[i, :, :] > 0, 1, np.nan)
-            centroids.append(ndimage.center_of_mass(binarized.fillna(0).data))
-            geo_coords.append(self._calculate_com(binarized)[0])
-        
-        # Convert pixel to geographic coordinates
-        y_vals, x_vals = zip(*centroids)
-        lat_convert = interp1d([0, labels.lat.shape[0]], 
-                              [labels.lat[0].item(), labels.lat[-1].item()])
-        lon_convert = interp1d([0, labels.lon.shape[0]], 
-                              [labels.lon[0].item(), labels.lon[-1].item()])
-        geo_points = list(zip(lat_convert(y_vals), lon_convert(x_vals)))
+            centroids.append(self._calculate_com(labels[i, :, :])[0])
         
         # Calculate displacements
         displacements = []
-        for i in range(len(geo_points) - 1):
-            dist = haversine(geo_points[i], geo_points[i + 1], Unit.KILOMETERS)
+        for i in range(len(centroids) - 1):
+            dist = haversine(centroids[i], centroids[i + 1], Unit.KILOMETERS)
             displacements.append(dist)
             
-        return geo_points, displacements
-
+        return centroids, displacements
+        
     def calculate_com_displacement(self, intensity: xr.DataArray) -> Tuple[List[Tuple[float, float]], List[float]]:
         """
         Calculate center of mass displacements over time.

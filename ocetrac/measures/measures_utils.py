@@ -7,6 +7,10 @@ from measures.temporal_measures import get_initial_detection_time, get_duration
 from measures.intensity_measures import calculate_intensity_metrics
 from measures.plotting import plot_displacement
 
+def convert_lon(ds):
+    """Helper to standardize longitude coordinates"""
+    return ds.assign_coords(lon_180=(((ds.lon + 180)%360)-180))
+    
 def get_object_masks(blobs, var_notrend, object_id):
     """
     Extract labels and masked anomalies for a specific object ID.
@@ -309,6 +313,10 @@ def process_objects_and_calculate_measures(
     for object_id in object_ids_to_process:
         try:
             event_binary, event_intensity = get_object_masks(blob_data, intensity_data, object_id=object_id)
+            event_binary_lon = convert_lon(event_binary)
+            event_binary['lon'] = event_binary_lon['lon_180']
+            event_intensity['lon'] = event_binary_lon['lon_180']
+
             measure_results_for_current_object = {}
 
             if run_shape:

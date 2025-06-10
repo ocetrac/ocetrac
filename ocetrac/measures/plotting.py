@@ -8,7 +8,7 @@ def plot_displacement(
     intensity_array: xr.DataArray,
     cmap: str = 'Greys',
     quiver_color: str = 'Orange',
-    text_color: str = 'cyan',
+    text_color: str = 'k',
     marker_color: str = 'Red',
     figsize: Tuple[int, int] = (12, 6),
     vmin: float = 0,
@@ -75,7 +75,6 @@ def plot_displacement(
     plt.legend(loc='upper right')
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
-    plt.title('Centroid Displacement Over Time')
     plt.xlim(0,360)
     plt.ylim(-90,90)
     plt.show()

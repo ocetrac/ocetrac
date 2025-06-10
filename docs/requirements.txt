@@ -1,5 +1,10 @@
-sphinx==1.6.7
-ipython
-numpydoc
 cython
+ipython
+myst-parser
+nbsphinx
 numpy
+numpydoc
+sphinx
+sphinx-copybutton
+sphinx_rtd_theme
+sphinxcontrib-srclinks

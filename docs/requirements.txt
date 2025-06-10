@@ -5,3 +5,6 @@ nbsphinx
 numpy
 numpydoc
 sphinx
+sphinx-copybutton
+sphinx_rtd_theme
+sphinxcontrib-srclinks

@@ -211,7 +211,7 @@ class Tracker:
         return mo_binary
 
     def _filter_area(self, binary_images):
-        """calculatre area with regionprops"""
+        """calculate area with regionprops"""
 
         def get_labels(binary_images):
             blobs_labels = self._label_either(binary_images, background=0)

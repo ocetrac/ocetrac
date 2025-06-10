@@ -60,6 +60,7 @@ For recommendations or bug reports, please visit: https://github.com/ocetrac/oce
    authors
    contributing
    wishlist
+   references
 
 Indices and tables
 ==================

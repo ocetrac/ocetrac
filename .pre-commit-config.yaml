@@ -4,7 +4,7 @@ repos:
   rev: 1.2.0
   hooks:
     - id: interrogate
-      exclude: ^(docs|setup.py|tests|ocetrac/_version.py)
+      exclude: ^(docs|setup.py|tests|ocetrac/_version.py|ocetrac/__init__.py|ocetrac/measures/__init__.py|ocetrac/utils/__init__.py)
       args: [--config=pyproject.toml]
 
 - repo: https://github.com/pre-commit/pre-commit-hooks

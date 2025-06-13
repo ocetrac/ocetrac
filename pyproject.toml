@@ -19,7 +19,7 @@ quiet = false
 color = true
 
 [tool.isort]
-known_third_party = ["cftime", "dask", "haversine", "matplotlib", "measures", "numpy", "pandas", "pkg_resources", "pytest", "scipy", "setuptools", "skimage", "utils", "xarray"]
+known_third_party = ["cftime", "dask", "haversine", "matplotlib", "numpy", "pandas", "pkg_resources", "pytest", "scipy", "setuptools", "skimage", "xarray"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

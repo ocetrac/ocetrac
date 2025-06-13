@@ -11,3 +11,51 @@ Tracking
    :toctree: ./_generated/
 
    Tracker.track
+
+Measures
+------------
+Motion
+^^^^^^^^^^^^
+.. currentmodule:: ocetrac
+.. autosummary::
+   :toctree: ./_generated/
+   :recursive:
+
+   measures.MotionMeasures
+
+Shape
+^^^^^^^^^^^^
+.. currentmodule:: ocetrac
+.. autosummary::
+   :toctree: ./_generated/
+   :recursive:
+
+   measures.ShapeMeasures
+
+Intensity
+^^^^^^^^^^^^
+.. currentmodule:: ocetrac
+.. autosummary::
+   :toctree: ./_generated/
+   :recursive:
+
+   measures.calculate_intensity_metrics
+
+Timing
+^^^^^^^^^^^^
+.. currentmodule:: ocetrac
+.. autosummary::
+   :toctree: ./_generated/
+   :recursive:
+
+   measures.get_duration
+   measures.get_initial_detection_time
+
+Plotting
+^^^^^^^^^^^^
+.. currentmodule:: ocetrac
+.. autosummary::
+   :toctree: ./_generated/
+   :recursive:
+
+   measures.plot_displacement

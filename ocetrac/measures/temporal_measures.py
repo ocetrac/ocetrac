@@ -13,16 +13,18 @@ from cftime import num2date
 
 def get_initial_detection_time(one_obj):
     """
-    Get the initial detection time from an xarray object.
+    Gets the initial detection time from an xarray object.
 
     Parameters
     ----------
     one_obj : xarray.DataArray or xarray.Dataset
         The xarray object containing a 'time' coordinate.
+
     Returns
     -------
     t0
         The initial detection time the same type as one_obj.time
+
     Raises
     ------
     ValueError
@@ -38,11 +40,13 @@ def get_initial_detection_time(one_obj):
 
 def get_duration(one_obj):
     """
-    Get the duration of the time coordinate in an xarray object.
+    Gets the duration of the time coordinate in an xarray object.
+
     Parameters
     ----------
     one_obj : xarray.DataArray or xarray.Dataset
         The xarray object containing a 'time' coordinate.
+
     Returns
     -------
     int

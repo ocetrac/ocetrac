@@ -23,7 +23,7 @@ from skimage.measure import regionprops
 
 
 class MotionMeasures:
-    """Class for calculating motion characteristics of labeled geospatial objects:
+    """Calculates motion characteristics of labeled geospatial objects.
 
     Provides methods for tracking object movement through centroid and center of mass calculations,
     displacement measures.

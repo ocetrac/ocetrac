@@ -1,0 +1,37 @@
+name: ocetrac_docs
+dependencies:
+   - python=3.8
+   # If your docs code examples depend on other packages add them here
+   - cftime
+   - haversine
+   - jupyter
+   - jupyterlab
+   - scipy
+   - scikit-image
+   - numpy
+   - pandas
+   - xarray
+   - matplotlib
+   - dask
+   - intake
+   # These are needed for the docs themselves
+   - numpydoc
+   - sphinx
+   - sphinx_rtd_theme
+   - ipython
+   - nbconvert
+   - nbformat
+   - ipykernel
+   - pandoc
+   - pooch
+   - pip
+   - pip:
+     - docrep<=0.2.7
+     - nbsphinx
+     - jupyter_client
+     - sphinx_rtd_theme
+     - sphinx-copybutton
+     - sphinxcontrib-srclinks
+     - recommonmark
+     - ocetrac
+     - cmip6_preprocessing

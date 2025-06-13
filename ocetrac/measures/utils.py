@@ -9,15 +9,10 @@ import warnings
 import numpy as np
 import xarray as xr
 
-# from ocetrac.measures import (
-from . import (
-    MotionMeasures,
-    ShapeMeasures,
-    calculate_intensity_metrics,
-    get_duration,
-    get_initial_detection_time,
-    plot_displacement,
-)
+from .intensity_measures import calculate_intensity_metrics
+from .motion_measures import MotionMeasures
+from .shape_measures import ShapeMeasures
+from .temporal_measures import get_duration, get_initial_detection_time
 
 
 def lons_to_360(data, coord="lon"):

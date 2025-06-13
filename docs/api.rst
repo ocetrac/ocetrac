@@ -1,7 +1,7 @@
 API Reference
 =============
 
-The API reference is automatically generated from the function docstrings in the octrac package. Refer to the examples in the sidebar for reference on how to use the functions.
+The API reference is automatically generated from the function docstrings in the ocetrac package. Refer to the examples in the sidebar for reference on how to use the functions.
 
 
 Tracking
@@ -10,4 +10,4 @@ Tracking
 .. autosummary::
    :toctree: ./_generated/
 
-   .Tracker.track
+   Tracker.track

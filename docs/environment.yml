@@ -3,7 +3,6 @@ dependencies:
    - python=3.8
    # If your docs code examples depend on other packages add them here
    - cftime
-   - haversine
    - jupyter
    - jupyterlab
    - scipy
@@ -34,4 +33,5 @@ dependencies:
      - sphinxcontrib-srclinks
      - recommonmark
      - ocetrac
+     - haversine
      - cmip6_preprocessing

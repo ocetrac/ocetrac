@@ -1,4 +1,5 @@
 cython
+haversine
 ipython
 myst-parser
 nbsphinx

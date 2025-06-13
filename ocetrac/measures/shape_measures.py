@@ -66,6 +66,10 @@ def log_execution_time(toggle_attr="use_decorators"):
 
 
 class ShapeMeasures:
+    """
+    Calculates shape characteristics of labeled geospatial objects.
+    """
+
     def __init__(
         self,
         lat_resolution: float = 110.574,

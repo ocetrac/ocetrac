@@ -9,7 +9,8 @@ import warnings
 import numpy as np
 import xarray as xr
 
-from ocetrac.measures import (
+# from ocetrac.measures import (
+from . import (
     MotionMeasures,
     ShapeMeasures,
     calculate_intensity_metrics,

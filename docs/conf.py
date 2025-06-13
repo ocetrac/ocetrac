@@ -3,18 +3,37 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+# -- Path setup --------------------------------------------------------------
 
-project = "ocetrac"
-copyright = "2025, ocetrac"
-author = "ocetrac"
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+
+import os
+import pathlib
+import sys
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 # see https://pypi.org/project/setuptools-scm/ for details
 from pkg_resources import get_distribution
+
+
+print("python exec:", sys.executable)
+print("sys.path:", sys.path)
+root = pathlib.Path(__file__).parent.parent.absolute()
+os.environ["PYTHONPATH"] = str(root)
+sys.path.insert(0, str(root))
+
+import ocetrac  # isort:skip
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = "ocetrac"
+copyright = "2025, ocetrac"
+author = "ocetrac"
 
 
 release = get_distribution("ocetrac").version
@@ -25,12 +44,17 @@ version = ".".join(release.split(".")[:2])
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "sphinx.ext.autodoc",
     "myst_parser",
     "sphinx.ext.autosummary",
     "nbsphinx",
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
+
+autosummary_generate = True
+
+autodoc_default_flags = ["members", "inherited-members"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

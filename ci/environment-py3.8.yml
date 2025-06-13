@@ -9,6 +9,10 @@ dependencies:
   - xarray
   - dask
   - scikit-image
+  - pandas
+  - haversine
+  - matplotlib
+  - cftime
   ##############
   - pytest
   - pip:

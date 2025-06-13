@@ -1,9 +1,12 @@
+cftime
 cython
+haversine
 ipython
 myst-parser
 nbsphinx
 numpy
 numpydoc
+ocetrac
 sphinx
 sphinx-copybutton
 sphinx_rtd_theme

@@ -7,22 +7,28 @@ Class for analyzing motion characteristics of geospatial objects:
 - Displacement, velocity and directionality metrics
 """
 
-import xarray as xr
+import warnings
+
+from math import atan2, degrees
+from typing import Dict, List, Tuple
+
 import numpy as np
+import xarray as xr
+
+from haversine import Unit, haversine
 from scipy import ndimage
 from scipy.interpolate import interp1d
-from skimage.measure import label as label_np, regionprops
-from haversine import haversine, Unit
-from typing import List, Tuple, Dict
-from math import atan2, degrees
+from skimage.measure import label as label_np
+from skimage.measure import regionprops
+
 
 class MotionMeasures:
     """Class for calculating motion characteristics of labeled geospatial objects:
-    
-    Provides methods for tracking object movement through centroid and center of mass calculations,  
+
+    Provides methods for tracking object movement through centroid and center of mass calculations,
     displacement measures.
     """
-    
+
     def __init__(self, use_decorators: bool = True):
         """
         Initialize motion metrics calculator.
@@ -34,52 +40,78 @@ class MotionMeasures:
         """
         self.use_decorators = use_decorators
 
-    def _calculate_com(self, intensity_image: xr.DataArray) -> List[Tuple[float, float]]:
+    def _calculate_com(
+        self, intensity_image: xr.DataArray
+    ) -> List[Tuple[float, float]]:
         """Calculate center of mass coordinates from intensity image.
 
         Parameters
         ----------
         intensity_image : xr.DataArray
             Intensity values with dimensions (lat, lon)
-        
+
         Returns
         -------
         List[Tuple[float, float]]
             List containing single (latitude, longitude) center of mass coordinate
-        
+
         Notes
         -----
         - Handles NaN values by filling with 0
+        - Warns if objects in the intensity image span all longitudes.
         """
         img = intensity_image.fillna(0)
-        com = ndimage.center_of_mass(img.data)
-        centroid = (float(img.lat[round(com[0])].values),
-                   float(img.lon[round(com[1])].values))
-        
-        if centroid[1] >= 359.75:
-            centroid = (centroid[0], centroid[1] - 359.75)
+        img_by_lon = img.sum("lat")[::-1]
+        shift = img_by_lon.argmin("lon").values
+        if img_by_lon[shift] > 0:
+            warnings.warn(
+                "Objects span all longitudes, centroid calculations may be incorrect."
+            )
+
+        rolled = img.roll(lon=shift, roll_coords=True)
+        com = ndimage.center_of_mass(rolled.data)
+        centroid = (
+            float(rolled.lat[round(com[0])].values),
+            float(rolled.lon[round(com[1])].values),
+        )
         return [centroid]
 
     def _label_regions(self, binary_data: np.ndarray) -> np.ndarray:
-        """Label connected regions in binary data.
+        """Label connected regions in binary data. Imposes periodic boundary and wraps labels.
 
         Parameters
         ----------
         binary_data : np.ndarray
             Binary data array with dimensions (lat, lon)
-        
+
         Returns
         -------
-        np.ndarray 
-            Labeled regions with unique integer labels for each region
+        np.ndarray
+            Labeled regions with unique integer labels for each region, with periodic boundary conditions
         """
         binary_data = np.nan_to_num(binary_data, nan=0)
         binary_data = np.where(np.isfinite(binary_data), binary_data, 0)
-        return label_np(binary_data, background=0)
+        labels = label_np(binary_data, background=0)
 
-    def calculate_centroids(self, labels: xr.DataArray, timestep: int) -> List[Tuple[float, float]]:
+        # Impose periodic boundary and wrap labels
+        first_column = labels[..., 0]
+        last_column = labels[..., -1]
+        unique_first = np.unique(first_column[first_column > 0])
+        for i in enumerate(unique_first):
+            first = np.where(first_column == i[1])
+            last = last_column[first[0]]
+            bad_labels = np.unique(last[last > 0])
+            replace = np.isin(labels, bad_labels)
+            labels[replace] = i[1]
+
+        labels_wrapped = np.unique(labels, return_inverse=True)[1].reshape(labels.shape)
+        return labels_wrapped
+
+    def calculate_centroids(
+        self, labels: xr.DataArray, timestep: int
+    ) -> List[Tuple[float, float]]:
         """
-        Calculate centroids for all regions at specified timestep.
+        Calculate centroids for all regions at a specified timestep.
 
         Parameters
         ----------
@@ -87,77 +119,34 @@ class MotionMeasures:
             Labeled regions with dimensions (time, lat, lon)
         timestep : int
             Index of timestep to analyze
-        
+
         Returns
         -------
         List[Tuple[float, float]]
             List of (latitude, longitude) centroid coordinates for each region
-        
+
         Notes
         -----
         - Handles NaN values by filling with 0
         - Handles edge cases for longitude wrapping
         """
+        centroids = []
         timestep_data = labels.isel(time=timestep)
         labeled = self._label_regions(timestep_data.values)
-        labeled = xr.DataArray(labeled, dims=timestep_data.dims, coords=timestep_data.coords)
+        labeled = xr.DataArray(
+            labeled, dims=timestep_data.dims, coords=timestep_data.coords
+        )
         labeled = labeled.where(timestep_data > 0, other=np.nan)
+        for label in np.unique(labeled)[:-1]:
+            centroids.append(
+                self._calculate_com(xr.where(labeled == label, 1, np.nan))[0]
+            )
 
-        # Handle edge cases for longitude wrapping
-        if (labels.lon[0].item() == 0 and labels.lon[-1].item() == 360):
-            edge_right = np.unique(labeled[:, -1:].values[~np.isnan(labeled[:, -1:].values)])
-            edge_left = np.unique(labeled[:, :1].values[~np.isnan(labeled[:, :1].values)])
-            edge_labels = np.unique(np.concatenate((edge_right, edge_left)))
-        else:
-            edge_labels = np.array([])
+        return centroids
 
-        non_edge = np.setdiff1d(np.unique(labeled), edge_labels)
-        non_edge = non_edge[~np.isnan(non_edge)]
-
-        centroids = []
-        for i in non_edge:
-            region = labeled.where(labeled == i, other=np.nan)
-            props = regionprops(region.fillna(0).astype(int).values)
-            for p in props:
-                centroids.append(
-                    (float(labeled.lat[round(p.centroid[0])].values),
-                    float(labeled.lon[round(p.centroid[1])].values))
-                )
-
-        # Handle edge regions (longitude wrapping)
-        if len(edge_labels) > 0:
-            for i in edge_left:
-                left_region = labeled.where(labeled == i, drop=True)
-                lon_edge = left_region[:, -1:].lon.item()
-                left_region.coords['lon'] = (left_region.coords['lon'] + 360)
-
-                for j in edge_right:
-                    right_region = labeled.where(labeled == j, other=np.nan)
-                    east = right_region.where(right_region.lon > lon_edge, drop=True)
-                    merged = xr.concat([east.where(east.lon >= lon_edge, drop=True), 
-                                      left_region], dim="lon")
-                    merged_bin = xr.where(merged > 0, 1, np.nan)
-                    labels_new = self._label_regions(merged_bin.values)
-                    labels_new = xr.DataArray(labels_new, dims=merged_bin.dims, 
-                                            coords=merged_bin.coords)
-                    if len(np.unique(labels_new)) <= 2:
-                        labels_new = labels_new.where(merged_bin > 0, other=np.nan)
-                        props = regionprops(labels_new.fillna(0).astype(int).values)
-                        for p in props:
-                            row, col = p.centroid
-                            lat_cent = np.interp(row, np.arange(labeled.sizes['lat']), labeled.lat.values)
-                            lon_cent = np.interp(col, np.arange(labeled.sizes['lon']), labeled.lon.values)
-                            centroids.append((float(lat_cent), float(lon_cent)))
-
-                            # centroids.append(
-                            #     (float(labels_new.lat[round(p.centroid[0])].values),
-                            #     float(labels_new.lon[round(p.centroid[1])].values))
-                            # )
-
-        return list(set(centroids))
-
-    def calculate_coms(self, labels: xr.DataArray, intensity: xr.DataArray, 
-                      timestep: int) -> List[Tuple[float, float]]:
+    def calculate_coms(
+        self, labels: xr.DataArray, intensity: xr.DataArray, timestep: int
+    ) -> List[Tuple[float, float]]:
         """
         Calculate centers of mass for intensity-weighted regions.
 
@@ -175,54 +164,26 @@ class MotionMeasures:
         List[Tuple[float, float]]
             List of (latitude, longitude) center of mass coordinates
         """
-        labels_ts = labels[timestep, :, :]
-        intensity_ts = intensity[timestep, :, :]
-        
-        labeled = self._label_regions(labels_ts.values)
-        labeled = xr.DataArray(labeled, dims=labels_ts.dims, coords=labels_ts.coords)
-        labeled = labeled.where(labels_ts > 0, other=np.nan)
-
-        # Edge detection
-        if (labels.lon[0].item() == 0 and labels.lon[-1].item() == 360):
-            edge_right = np.unique(labeled[:, -1:].values[~np.isnan(labeled[:, -1:].values)])
-            edge_left = np.unique(labeled[:, :1].values[~np.isnan(labeled[:, :1].values)])
-            edge_labels = np.unique(np.concatenate((edge_right, edge_left)))
-        else:
-            edge_labels = np.array([])
-
-        non_edge = np.setdiff1d(np.unique(labeled), edge_labels)
-        non_edge = non_edge[~np.isnan(non_edge)]
-
         coms = []
-        for i in non_edge:
-            region_intensity = xr.where(labeled == i, intensity_ts, np.nan)
-            coms.append(self._calculate_com(region_intensity)[0])
-            
-        # Handle edge regions with intensity
-        if len(edge_labels) > 0:
-            for i in edge_left:
-                left_region = labeled.where(labeled == i, drop=True)
-                lon_edge = left_region[:, -1:].lon.item()
-                if lon_edge < 358.75:
-                    left_intensity = intensity_ts.where((intensity_ts.lon <= lon_edge), drop=True)
-                    left_region.coords['lon'] = (left_region.coords['lon'] + 360)
-                    left_intensity.coords['lon'] = (left_intensity.coords['lon'] + 360)
-                    
-                    for j in edge_right:
-                        right_intensity = intensity_ts.where(labeled == j, other=np.nan)
-                        east_intensity = right_intensity.where(right_intensity.lon > lon_edge, drop=True)
-                        merged_intensity = xr.concat([east_intensity.where(east_intensity.lon >= lon_edge, drop=True), 
-                                                    left_intensity], dim="lon")
-                        merged_bin = xr.where(merged_intensity.notnull(), 1, np.nan)
-                        labels_new = self._label_regions(merged_bin.values)
-                        labels_new = xr.DataArray(labels_new, dims=merged_bin.dims, 
-                                                coords=merged_bin.coords)
-                        if len(np.unique(labels_new)) <= 2:
-                            merged_intensity = merged_intensity.where(merged_bin > 0, other=np.nan)
-                            coms.append(self._calculate_com(merged_intensity)[0])
+        timestep_data = labels.isel(time=timestep)
+        timestep_intensity = intensity.isel(time=timestep)
+        labeled = self._label_regions(timestep_data.values)
+        labeled = xr.DataArray(
+            labeled, dims=timestep_data.dims, coords=timestep_data.coords
+        )
+        labeled = labeled.where(timestep_data > 0, other=np.nan)
+        for label in np.unique(labeled)[:-1]:
+            coms.append(
+                self._calculate_com(timestep_intensity.where(labeled == label, np.nan))[
+                    0
+                ]
+            )
+
         return coms
 
-    def calculate_centroid_displacement(self, labels: xr.DataArray) -> Tuple[List[Tuple[float, float]], List[float]]:
+    def calculate_centroid_displacement(
+        self, labels: xr.DataArray
+    ) -> Tuple[List[Tuple[float, float]], List[float]]:
         """
         Calculate centroid displacements over time.
 
@@ -240,40 +201,44 @@ class MotionMeasures:
         centroids = []
         for i in range(labels.shape[0]):
             centroids.append(self._calculate_com(labels[i, :, :])[0])
-        
+
         # Calculate displacements
         displacements = []
         for i in range(len(centroids) - 1):
-            dist = haversine(centroids[i], centroids[i + 1], Unit.KILOMETERS)
+            dist = haversine(
+                centroids[i], centroids[i + 1], Unit.KILOMETERS, normalize=True
+            )
             displacements.append(dist)
-            
+
         return centroids, displacements
-        
-    def calculate_com_displacement(self, intensity: xr.DataArray) -> Tuple[List[Tuple[float, float]], List[float]]:
+
+    def calculate_com_displacement(
+        self, intensity: xr.DataArray
+    ) -> Tuple[List[Tuple[float, float]], List[float]]:
         """
         Calculate center of mass displacements over time.
 
         Parameters
         ----------
-        intensity : xr.DataArray  
+        intensity : xr.DataArray
             Intensity values with dimensions (time, lat, lon)
 
         Returns
         -------
         Tuple[List[Tuple[float, float]], List[float]]
-            - List of (lat, lon) COM coordinates per timestep  
+            - List of (lat, lon) COM coordinates per timestep
             - List of displacement distances between timesteps (km)
         """
         coms = []
         for i in range(intensity.shape[0]):
             coms.append(self._calculate_com(intensity[i, :, :])[0])
-        
+
         # Calculate displacements
         displacements = []
         for i in range(len(coms) - 1):
-            dist = haversine(coms[i], coms[i + 1], Unit.KILOMETERS)
+            dist = haversine(coms[i], coms[i + 1], Unit.KILOMETERS, normalize=True)
             displacements.append(dist)
-            
+
         return coms, displacements
 
     def calculate_directionality(self, coords: List[Tuple[float, float]]) -> Dict:
@@ -290,41 +255,41 @@ class MotionMeasures:
         dict
             Contains:
             - mean_delta_lon: Mean longitudinal displacement
-            - mean_delta_lat: Mean latitudinal displacement  
+            - mean_delta_lat: Mean latitudinal displacement
             - mean_angle: Mean movement angle (degrees)
             - direction: Direction
             - movement_count: Number of movements analyzed
         """
         if len(coords) < 2:
             return {"error": "2 coordinates needed"}
-        
+
         # Movement vectors
         delta_lons = []
         delta_lats = []
-        for i in range(len(coords)-1):
+        for i in range(len(coords) - 1):
             lon1, lat1 = coords[i]
-            lon2, lat2 = coords[i+1]
+            lon2, lat2 = coords[i + 1]
             delta_lons.append(lon2 - lon1)
             delta_lats.append(lat2 - lat1)
-        
+
         # Mean direction
         mean_delta_lon = np.mean(delta_lons)
         mean_delta_lat = np.mean(delta_lats)
         mean_angle = degrees(atan2(mean_delta_lat, mean_delta_lon)) % 360
-        
+
         if -45 <= mean_angle < 45 or 315 <= mean_angle < 360:
             direction = "eastward (zonal-dominated)"
         elif 45 <= mean_angle < 135:
-            direction = "northward (meridional-dominated)" 
+            direction = "northward (meridional-dominated)"
         elif 135 <= mean_angle < 225:
             direction = "westward (zonal-dominated)"
         else:
             direction = "southward (meridional-dominated)"
-        
+
         return {
             "mean_delta_lon": mean_delta_lon,
             "mean_delta_lat": mean_delta_lat,
             "mean_angle": mean_angle,
             "direction": direction,
-            "movement_count": len(delta_lons)
+            "movement_count": len(delta_lons),
         }

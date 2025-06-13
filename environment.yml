@@ -2,12 +2,17 @@ name: ocetrac
 channels:
   - conda-forge
 dependencies:
-  # Required for full project functionality 
+  # Required for full project functionality
   - pytest
-  # Examples 
+  # Examples
   - jupyter
   - jupyterlab
   - xarray
   - scipy
   - dask
   - scikit-image
+  - numpy
+  - pandas
+  - haversine
+  - matplotlib
+  - cftime

@@ -6,8 +6,10 @@ import numpy as np
 import scipy.ndimage
 import xarray as xr
 
-from skimage.measure import label as label_np
-from skimage.measure import regionprops
+from skimage.measure import regionprops_table 
+from dask.base import is_dask_collection
+from dask import persist
+from dask_image.ndmeasure import label as label_dask
 
 
 def _apply_mask(binary_images, mask):
@@ -39,6 +41,9 @@ class Tracker:
                 raise ValueError(
                     f"Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(da.dims)}"
                 )
+
+        if not is_dask_collection(da.data):
+            raise ValueError('The input DataArray is not backed by a Dask array. Please chunk (in time), and try again.  :)')
 
     def track(self):
         """
@@ -103,34 +108,28 @@ class Tracker:
             binary_images_with_mask
         )
 
-        # Label objects
-        labels, num = self._label_either(binary_labels, return_num=True, connectivity=3)
-
-        # Wrap labels
-        grid_res = abs(self.da[self.xdim][1] - self.da[self.xdim][0])
-        if self.da[self.xdim][-1] - self.da[self.xdim][0] >= 360 - grid_res:
-            labels_wrapped, N_final = self._wrap(labels)
-        else:
-            labels_wrapped = labels
-            N_final = np.max(labels)
-
+        # Label objects (using dask_label, *wraps at the same time*) -- connectivity now in time
+        labels_wrapped, N_final = label_dask(binary_labels, structure=np.ones((3,3,3)), wrap_axes=(2,))
+        labels_wrapped, N_final = persist(labels_wrapped, N_final) # Persist both in memory simultaneously...
+        N_final = N_final.compute()
+        
         # Final labels to DataArray
         new_labels = xr.DataArray(
-            labels_wrapped, dims=self.da.dims, coords=self.da.coords
+            labels_wrapped, coords=binary_labels.coords, dims=binary_labels.dims, attrs=binary_labels.attrs
         )
         new_labels = new_labels.where(new_labels != 0, drop=False, other=np.nan)
 
         ## Metadata
 
         # Calculate Percent of total object area retained after size filtering
-        sum_tot_area = int(np.sum(area.values))
+        sum_tot_area = int(area.sum().item())
 
         reject_area = area.where(area <= min_area, drop=True)
-        sum_reject_area = int(np.sum(reject_area.values))
+        sum_reject_area = int(reject_area.sum().item())
         percent_area_reject = sum_reject_area / sum_tot_area
 
         accept_area = area.where(area > min_area, drop=True)
-        sum_accept_area = int(np.sum(accept_area.values))
+        sum_accept_area = int(accept_area.sum().item())
         percent_area_accept = sum_accept_area / sum_tot_area
 
         new_labels = new_labels.rename("labels")
@@ -213,104 +212,44 @@ class Tracker:
     def _filter_area(self, binary_images):
         """calculate area with regionprops"""
 
-        def get_labels(binary_images):
-            blobs_labels = self._label_either(binary_images, background=0)
-            return blobs_labels
-
-        labels = xr.apply_ufunc(
-            get_labels,
-            binary_images,
-            input_core_dims=[[self.ydim, self.xdim]],
-            output_core_dims=[[self.ydim, self.xdim]],
-            output_dtypes=[binary_images.dtype],
-            vectorize=True,
-            dask="parallelized",
-        )
-
-        labels = xr.DataArray(
-            labels, dims=binary_images.dims, coords=binary_images.coords
-        )
-        labels = labels.where(labels > 0, drop=False, other=np.nan)
-
-        # The labels are repeated each time step, therefore we relabel them to be consecutive
-        max_id = 0
-        for i in range(1, labels.shape[0]):
-            max_id = np.nanmax([max_id, labels[i - 1, :, :].max().values])
-            labels[i, :, :] = labels[i, :, :].values + max_id
-
-        labels = labels.where(labels > 0, drop=False, other=0)
-        labels_wrapped, N_initial = self._wrap(np.array(labels))
-
+        # Label time-independent in 2D (i.e. no time connectivity!) and wrap in xdim
+        connectivity = np.zeros((3,3,3))
+        connectivity[1,:,:] = 1
+        labels_wrapped, N_initial = label_dask(binary_images, structure=connectivity, wrap_axes=(2,))
+        labels_wrapped, N_initial = persist(labels_wrapped, N_initial) # Persist both in memory simultaneously...
+        
+        N_initial = N_initial.compute()
+        labels_wrapped = xr.DataArray(labels_wrapped, coords=binary_images.coords, dims=binary_images.dims, attrs=binary_images.attrs)
+        
         # Calculate Area of each object and keep objects larger than threshold
-        props = regionprops(labels_wrapped.astype("int"))
-
-        labelprops = [p.label for p in props]
-        labelprops = xr.DataArray(
-            labelprops, dims=["label"], coords={"label": labelprops}
-        )
-
-        area = xr.DataArray(
-            [p.area for p in props], dims=["label"], coords={"label": labelprops}
-        )  # Number of pixels of the region.
+        def regionprops_slice(labels):
+            props_slice = regionprops_table(labels.astype('int'), properties=['label', 'area'])
+            return props_slice
+        
+        props = xr.apply_ufunc(regionprops_slice, labels_wrapped,
+                input_core_dims=[[self.ydim, self.xdim]],
+                output_core_dims=[[]],
+                output_dtypes=[object],
+                vectorize=True,
+                dask='parallelized')
+        
+        props_da = xr.concat([xr.Dataset({key: (['label'], value) for key, value in item.items()}) for item in props.values], dim='label')
+        
+        labelprops = props_da['label']        
+        area = props_da['area']
 
         if area.size == 0:
-            raise ValueError(
-                f"No objects were detected. Try changing radius or min_size_quartile parameters."
-            )
+            raise ValueError(f'No objects were detected. Try changing radius or min_size_quartile parameters.')
+        
+        min_area = np.percentile(area, self.min_size_quartile*100)
+        print(f'minimum area: {min_area}') 
+        
+        keep_labels = labelprops.where(area>=min_area, drop=True)
+        keep_where = labels_wrapped.isin(keep_labels)
+        out_labels = xr.where(~keep_where, 0, labels_wrapped)
 
-        min_area = np.percentile(area, self.min_size_quartile * 100)
-        print(f"minimum area: {min_area}")
-
-        keep_labels = labelprops.where(area >= min_area, drop=True)
-        keep_where = np.isin(labels_wrapped, keep_labels)
-        out_labels = xr.DataArray(
-            np.where(keep_where == False, 0, labels_wrapped),
-            dims=binary_images.dims,
-            coords=binary_images.coords,
-        )
-
-        # Convert images to binary. All positive values == 1, otherwise == 0
-        binary_labels = out_labels.where(out_labels == 0, drop=False, other=1)
+        # Convert labels to binary. All positive values == 1, otherwise == 0
+        binary_labels = out_labels.where(out_labels==0, drop=False, other=1)
 
         return area, min_area, binary_labels, N_initial
 
-    def _label_either(self, data, **kwargs):
-        if isinstance(data, dsa.Array):
-            try:
-                from dask_image.ndmeasure import label as label_dask
-
-                def label_func(a, **kwargs):
-                    ids, num = label_dask(a, **kwargs)
-                    return ids
-
-            except ImportError:
-                raise ImportError(
-                    "Dask_image is required to use this function on Dask arrays. "
-                    "Either install dask_image or else call .load() on your data."
-                )
-        else:
-            label_func = label_np
-        return label_func(data, **kwargs)
-
-    def _wrap(self, labels):
-        """Impose periodic boundary and wrap labels"""
-        first_column = labels[..., 0]
-        last_column = labels[..., -1]
-
-        unique_first = np.unique(first_column[first_column > 0])
-
-        # This loop iterates over the unique values in the first column, finds the location of those values in
-        # the first columnm and then uses that index to replace the values in the last column with the first column value
-        for i in enumerate(unique_first):
-            first = np.where(first_column == i[1])
-            last = last_column[first[0], first[1]]
-            bad_labels = np.unique(last[last > 0])
-            replace = np.isin(labels, bad_labels)
-            labels[replace] = i[1]
-
-        labels_wrapped = np.unique(labels, return_inverse=True)[1].reshape(labels.shape)
-
-        # recalculate the total number of labels
-        N = np.max(labels_wrapped)
-
-        return labels_wrapped, N

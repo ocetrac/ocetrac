@@ -11,6 +11,7 @@ dependencies:
   - scipy
   - dask
   - scikit-image
+  - dask_image
   - numpy
   - pandas
   - haversine

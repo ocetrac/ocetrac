@@ -77,7 +77,7 @@ class ShapeMeasures:
         use_decorators: bool = True,
     ):
         """
-        Initializes the ShapeMeasures class with latitude and longitude resolutions and decorater usage.
+        Initializes the ShapeMeasures class with latitude and longitude resolutions and decorator usage.
 
         Parameters
         ----------

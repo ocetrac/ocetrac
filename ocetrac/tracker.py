@@ -57,14 +57,14 @@ class Tracker:
             
             Structuring elements are defined such that cells are included if their distance from the origin in index space is
             strictly less than the radius. For example, a radius of 1 means that the structuring element includes just an
-            individual pixel (such that applying the morhological closing and opening just returns the original binary array),
+            individual pixel (such that applying the morphological closing and opening just returns the original binary array),
             while a radius of 2 would additionally include the eight cells cells adjacent to the origin. As the radius increases,
             the shape of the structure element asymptotes to a circle centered on the origin.
 
         min_size_quartile : float
             The quantile used to define the threshold of the smallest area object retained in tracking. Value should be between 0 and 1.
             A value of exactly 0 means objects of any size are retained while a value of 1 retains just the single largest event.
-            Higher values of `min_size_quartile` result in improved performance because less events are stored in memory and need to be
+            Higher values of `min_size_quartile` result in improved performance because fewer events are stored in memory and need to be
             compared.
 
         timedim : str
@@ -160,7 +160,7 @@ class Tracker:
                 
                 Structuring elements are defined such that cells are included if their distance from the origin in index space is
                 strictly less than the radius. For example, a radius of 1 means that the structuring element includes just an
-                individual pixel (such that applying the morhological closing and opening just returns the original binary array),
+                individual pixel (such that applying the morphological closing and opening just returns the original binary array),
                 while a radius of 2 would additionally include the eight cells cells adjacent to the origin. As the radius increases,
                 the shape of the structure element asymptotes to a circle centered on the origin.
 
@@ -300,7 +300,7 @@ class Tracker:
         unique_first = np.unique(first_column[first_column > 0])
 
         # This loop iterates over the unique values in the first column, finds the location of those values in
-        # the first columnm and then uses that index to replace the values in the last column with the first column value
+        # the first column and then uses that index to replace the values in the last column with the first column value
         for i in enumerate(unique_first):
             first = np.where(first_column == i[1])
             last = last_column[first[0], first[1]]

@@ -42,4 +42,4 @@ How you can contribute
 Acknowledgements
 ----------------
 - We rely heavily on [scikit-image](https://peerj.com/articles/453/) and its community of contributors. 
-- This work grew from a collabortion with NCAR during the ASP Graduate Visitor Program attended by Hillary Scannell. This project recieved continued support from the Leonardo DiCaprio Foundation, Microsoft, and the Gordon and Betty Moore Foundation. 
+- This work grew from a collaboration with NCAR during the ASP Graduate Visitor Program attended by Hillary Scannell. This project received continued support from the Leonardo DiCaprio Foundation, Microsoft, and the Gordon and Betty Moore Foundation. 

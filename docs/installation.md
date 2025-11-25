@@ -4,7 +4,7 @@ Installation
 Notes on how to install ocetrac.
 
 ##### Conda
-The easiest way to install the packge is with conda: `conda install -c conda-forge ocetrac`.
+The easiest way to install the package is with conda: `conda install -c conda-forge ocetrac`.
 
 ##### PyPI
 You can also install with pip: `pip install ocetrac`.

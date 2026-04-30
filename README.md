@@ -18,7 +18,6 @@ ocetrac
 
 Both trackers operate lazily with Dask for memory-efficient, parallelised execution on large datasets.
 
----
  
 ## Installation
  
@@ -49,9 +48,6 @@ conda env create -f environment.yml
 conda activate ocetrac
 python -m pytest tests/ -v
 ```
- 
----
-
 
 ## Package structure
  
@@ -61,14 +57,11 @@ ocetrac/
 ├── DeepTrack/           — 4-D tracker (time, depth, lat, lon)
 └── SurfTrack/           — 3-D tracker (time, lat, lon)
 ```
- 
----
- 
+
+  
 ## Contributing
  
 Issues and pull requests are welcome on [GitHub](https://github.com/ocetrac/ocetrac). Please file a [bug report](https://github.com/ocetrac/ocetrac/issues) if you find a problem, or open a [pull request](https://github.com/ocetrac/ocetrac/pulls) if you make an improvement.
- 
----
 
  
 ## Citation
@@ -76,9 +69,8 @@ Issues and pull requests are welcome on [GitHub](https://github.com/ocetrac/ocet
 **SurfTrack** — When using the SurfTrack module, please cite the original [software](https://doi.org/10.5281/zenodo.5102928) and [Spatiotemporal Evolution of Marine Heatwaves Globally](https://journals.ametsoc.org/view/journals/atot/aop/JTECH-D-23-0126.1/JTECH-D-23-0126.1.xml).
  
 **DeepTrack** — The DeepTrack module is currently being prepared for PyPI and will be described in a forthcoming JOSS publication. Citation details will be added here upon publication.
- 
----
 
+ 
 ## Acknowledgements
 
 - We rely heavily on [scikit-image](https://peerj.com/articles/453/) and its community of contributors.

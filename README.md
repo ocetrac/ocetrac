@@ -11,35 +11,76 @@ ocetrac
 [![All platform](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocetrac-feedstock?branchName=master)](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=13414&branchName=maste)
 
 
-Ocetrac is a Python 3.6+ packaged designed to label and track unique geospatial features from gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the [Climate Data Science Lab](https://ocean-transport.github.io/cds_lab.html) at Columbia University / Lamont-Doherty Earth Observatory.
+**ocetrac** is a Python package for labelling and tracking geospatial features in gridded datasets. It provides two tracking algorithms:
 
-When using this package, please cite the original [software](https://doi.org/10.5281/zenodo.5102928). This package is also described in [Spatiotemporal Evolution of Marine Heatwaves Globally](https://journals.ametsoc.org/view/journals/atot/aop/JTECH-D-23-0126.1/JTECH-D-23-0126.1.xml). 
+- **DeepTrack** — 4-D connected-component labelling and temporal tracking across `(time, depth, lat, lon)`, designed for subsurface features such as volumetric marine heatwaves.
+- **SurfTrack** — 3-D connected-component labelling and temporal tracking across `(time, lat, lon)`, designed for surface features.
 
+Both trackers operate lazily with Dask for memory-efficient, parallelised execution on large datasets.
 
-Installation
-------------
-
-**Conda**
-
-To install the core package from conda-forge run: ``conda install -c conda-forge ocetrac``
-
+---
+ 
+## Installation
+ 
+**Conda (recommended)**
+ 
+```bash
+conda install -c conda-forge ocetrac
+```
+ 
 **PyPI**
+ 
+```bash
+pip install ocetrac
+```
+ 
+**From source**
+ 
+```bash
+git clone https://github.com/ocetrac/ocetrac.git
+cd ocetrac
+pip install -e .
+```
+ 
+**Development environment**
+ 
+```bash
+conda env create -f environment.yml
+conda activate ocetrac
+python -m pytest tests/ -v
+```
+ 
+---
 
-To install the core package run: ``pip install ocetrac``.
 
-**GitHub**
+## Package structure
+ 
+```
+ocetrac/
+├── preprocessing/       — anomaly computation, morphological cleaning, thresholding
+├── DeepTrack/           — 4-D tracker (time, depth, lat, lon)
+└── SurfTrack/           — 3-D tracker (time, lat, lon)
+```
+ 
+---
+ 
+## Contributing
+ 
+Issues and pull requests are welcome on [GitHub](https://github.com/ocetrac/ocetrac). Please file a [bug report](https://github.com/ocetrac/ocetrac/issues) if you find a problem, or open a [pull request](https://github.com/ocetrac/ocetrac/pulls) if you make an improvement.
+ 
+---
 
-1. Clone ocetrac to your local machine: ``git clone https://github.com/ocetrac/ocetrac.git``
-2. Change to the parent directory of ocetrac
-3. Install ocetrac with ``pip install -e ./ocetrac``. This will allow
-   changes you make locally, to be reflected when you import the package in Python.
-   
-How you can contribute
-----------------------
+ 
+## Citation
+ 
+**SurfTrack** — When using the SurfTrack module, please cite the original [software](https://doi.org/10.5281/zenodo.5102928) and [Spatiotemporal Evolution of Marine Heatwaves Globally](https://journals.ametsoc.org/view/journals/atot/aop/JTECH-D-23-0126.1/JTECH-D-23-0126.1.xml).
+ 
+**DeepTrack** — The DeepTrack module is currently being prepared for PyPI and will be described in a forthcoming JOSS publication. Citation details will be added here upon publication.
+ 
+---
 
-- You can get involved by trying ocetrac, filing [issues](https://github.com/ocetrac/ocetrac/issues) if you find problems, and making [pull requests](https://github.com/ocetrac/ocetrac/pulls) if you make improvements.
+## Acknowledgements
 
-Acknowledgements
-----------------
-- We rely heavily on [scikit-image](https://peerj.com/articles/453/) and its community of contributors. 
-- This work grew from a collabortion with NCAR during the ASP Graduate Visitor Program attended by Hillary Scannell. This project recieved continued support from the Leonardo DiCaprio Foundation, Microsoft, and the Gordon and Betty Moore Foundation. 
+- We rely heavily on [scikit-image](https://peerj.com/articles/453/) and its community of contributors.
+- This work is currently supported through a collaboration with the [UW eScience Institute](https://escience.washington.edu/).
+- This work origiinally grew from a collaboration with NCAR during the ASP Graduate Visitor Program attended by Hillary Scannell. This project recieved support from the Leonardo DiCaprio Foundation, Microsoft, and the Gordon and Betty Moore Foundation. 

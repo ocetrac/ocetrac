@@ -1,0 +1,19 @@
+name: test_env_ocetrac
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - xarray
+  - dask
+  - scipy
+  - scikit-image
+  - pandas
+  - matplotlib
+  - haversine
+  - cftime
+  - pip
+  - pip:
+    - pytest
+    - pytest-cov

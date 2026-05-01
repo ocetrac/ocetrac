@@ -1,11 +1,12 @@
 # ============================================================
-# mhwtrack4d/preprocessing.py
+# preprocessing.py
 # ============================================================
 """
 Preprocessing pipeline:
   1. compute_anomalies  — remove climatological mean + seasonal cycle
   2. clean_binary       — morphological close→open per (t, z) slice  [DASK]
   3. threshold_features — 90th-percentile exceedance mask             [DASK]
+  4. calculate_anomalies_trend_features - one surface level
 """
 from __future__ import annotations
 
@@ -147,3 +148,95 @@ def threshold_features(
     with ProgressBar():
         features = features.compute()
     return features, threshold_map
+
+
+def calculate_anomalies_trend_features(
+    ds:             xr.DataArray,
+    threshold_perc: float = 0.9,
+) -> tuple[xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray]:
+    """
+    Calculate anomalies and extreme features by removing seasonal cycles
+    and linear trends using a 6-coefficient harmonic model:
+
+        T(t) = β₀ + β₁·t' + β₂·sin(2π·t') + β₃·cos(2π·t')
+                          + β₄·sin(4π·t') + β₅·cos(4π·t')
+
+    where t' = year + month/12 (fractional year).
+
+    Parameters
+    ----------
+    ds              : DataArray (time, lat, lon)
+                      Input climate data — must have a ``time`` coordinate
+                      with dt accessors (year, month).
+    threshold_perc  : float — percentile threshold for extreme event
+                      detection, e.g. 0.9 for the 90th percentile.
+                      Default 0.9.
+
+    Returns
+    -------
+    mean            : DataArray (lat, lon)          — long-term mean
+    trend           : DataArray (time, lat, lon)    — linear trend component
+    seas            : DataArray (time, lat, lon)    — annual + semiannual cycles
+    features_notrend: DataArray (time, lat, lon)    — anomalies >= threshold,
+                                                       NaN elsewhere
+    var_anom_notrend: DataArray (time, lat, lon)    — full residual anomalies
+    """
+    # Convert time to decimal years (e.g. 2000.5 for July 2000)
+    dyr = ds.time.dt.year + ds.time.dt.month / 12
+
+    # 6-component harmonic model matrix (6, T)
+    model = np.array([
+        np.ones(len(dyr)),               # β₀ — mean
+        dyr - np.mean(dyr),              # β₁ — linear trend
+        np.sin(2 * np.pi * dyr),         # β₂ — annual sine
+        np.cos(2 * np.pi * dyr),         # β₃ — annual cosine
+        np.sin(4 * np.pi * dyr),         # β₄ — semiannual sine
+        np.cos(4 * np.pi * dyr),         # β₅ — semiannual cosine
+    ])
+
+    # Solve least squares via pseudo-inverse (T, 6)
+    pmodel = np.linalg.pinv(model)
+
+    # Convert to DataArrays for xarray dot-product operations
+    model_da = xr.DataArray(
+        model.T,
+        dims=["time", "coeff"],
+        coords={"time": ds.time.values, "coeff": np.arange(1, 7)},
+    )
+    pmodel_da = xr.DataArray(
+        pmodel.T,
+        dims=["coeff", "time"],
+        coords={"coeff": np.arange(1, 7), "time": ds.time.values},
+    )
+
+    # Fit coefficients per grid cell: (coeff, lat, lon)
+    var_mod = xr.DataArray(
+        pmodel_da.dot(ds),
+        dims=["coeff", "lat", "lon"],
+        coords={
+            "coeff": np.arange(1, 7),
+            "lat":   ds.lat.values,
+            "lon":   ds.lon.values,
+        },
+    )
+
+    # Reconstruct components
+    mean  = model_da[:, 0].dot(var_mod[0, :, :])   # long-term mean (lat, lon)
+    trend = model_da[:, 1].dot(var_mod[1, :, :])   # linear trend (time, lat, lon)
+    seas  = model_da[:, 2:].dot(var_mod[2:, :, :]) # seasonal cycles (time, lat, lon)
+
+    # Full-field anomaly = observed − fitted model
+    var_anom_notrend = ds - model_da.dot(var_mod)
+
+    # Rechunk time to -1 for quantile computation
+    if var_anom_notrend.chunks:
+        var_anom_notrend = var_anom_notrend.chunk({"time": -1})
+
+    # Threshold and extreme features
+    threshold        = var_anom_notrend.quantile(threshold_perc, dim="time")
+    features_notrend = var_anom_notrend.where(
+        var_anom_notrend >= threshold, other=np.nan
+    )
+
+    return mean, trend, seas, features_notrend, var_anom_notrend
+    

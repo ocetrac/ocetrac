@@ -7,8 +7,7 @@ Grid helpers: depth geometry, cell volume, and structuring elements.
 Supported grids
 ---------------
 POP_grid : curvilinear, TAREA in cm², z_t in cm  ← implemented
-MOM_grid : TODO
-NEMO_grid: TODO
+Other grids: TODO
 isopycnal: TODO
 """
 from __future__ import annotations

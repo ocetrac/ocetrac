@@ -1,6 +1,33 @@
+# ============================================================
+# SurfTrack/tracker.py
+# ============================================================
 """
-This module applies all Ocetrac methods for labeling objects in 3 dimensions.
+Surface (2-D + time) connected-component labelling and tracking.
+
+Changes from the original version
+-------------------
+1. `min_area_cells` parameter added — absolute floor for object area so the
+   percentile threshold does not collapse near zero when all objects are
+   similarly sized.  Threshold = max(min_area_cells, percentile(areas, q)).
+ 
+2. Relabelling loop fixed — the original code added max_id to ALL label
+   values including NaN cells, silently corrupting them.  Now the offset is
+   applied only to positive (valid) label cells.
+ 
+3. `dask_gufunc_kwargs={"allow_rechunk": True}` added to the apply_ufunc
+   call in _morphological_operations — without this, spatially chunked dask
+   arrays raise a ValueError because nlat/nlon are core dims.
+
+Core algorithms:
+ 
+  Morphological cleaning   morphological_operations
+  Masking                  apply_mask
+  Area filtering           filter_area
+  3-D labelling            label_3d
+  Date-line wrapping       wrap_labels
 """
+from __future__ import annotations
+
 import dask.array as dsa
 import numpy as np
 import scipy.ndimage
@@ -9,308 +36,301 @@ import xarray as xr
 from skimage.measure import label as label_np
 from skimage.measure import regionprops
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Masking
+# ──────────────────────────────────────────────────────────────────────────────
 
-def _apply_mask(binary_images, mask):
-    binary_images_with_mask = binary_images.where(mask == 1, drop=False, other=0)
-    return binary_images_with_mask
-
-
-class Tracker:
+def apply_mask(
+    binary_images: xr.DataArray, 
+    mask:          xr.DataArray, 
+) -> xr.DataArray:
     """
-    Tracker object for applying Ocetrac
+    Zero out grid cells that fall outside the ocean mask.
+ 
+    Parameters
+    ----------
+    binary_images : DataArray
+        Binary (0/1) field to be masked.
+    mask : DataArray
+        Binary mask — 1 = valid ocean cell, 0 = land or ignored region.
+ 
+    Returns
+    -------
+    DataArray
+        ``binary_images`` with land/ignored cells set to 0.
     """
+    return binary_images.where(mask == 1, drop=False, other=0)
 
-    def __init__(
-        self, da, mask, radius, min_size_quartile, timedim, xdim, ydim, positive=True
-    ):
-        self.da = da
-        self.mask = mask
-        self.radius = radius
-        self.min_size_quartile = min_size_quartile
-        self.timedim = timedim
-        self.xdim = xdim
-        self.ydim = ydim
-        self.positive = positive
+# ──────────────────────────────────────────────────────────────────────────────
+# Morphological cleaning
+# ──────────────────────────────────────────────────────────────────────────────
 
-        if (timedim, ydim, xdim) != da.dims:
-            try:
-                da = da.transpose(timedim, ydim, xdim)
-            except:
-                raise ValueError(
-                    f"Ocetrac currently only supports 3D DataArrays. The dimensions should only contain ({timedim}, {xdim}, and {ydim}). Found {list(da.dims)}"
-                )
-
-    def track(self):
-        """
-        Label and track image features.
-
-        Parameters
-        ----------
-        da : xarray.DataArray
-            The data to label.
-
-        mask : xarray.DataArray
-            The mask of points to ignore. Must be binary where 1 = true point and 0 = background to be ignored.
-
-        radius : int
-            The size of the structuring element used in morphological opening and closing. Radius specified by the number of grid units.
-            
-            Structuring elements are defined such that cells are included if their distance from the origin in index space is
-            strictly less than the radius. For example, a radius of 1 means that the structuring element includes just an
-            individual pixel (such that applying the morhological closing and opening just returns the original binary array),
-            while a radius of 2 would additionally include the eight cells cells adjacent to the origin. As the radius increases,
-            the shape of the structure element asymptotes to a circle centered on the origin.
-
-        min_size_quartile : float
-            The quantile used to define the threshold of the smallest area object retained in tracking. Value should be between 0 and 1.
-            A value of exactly 0 means objects of any size are retained while a value of 1 retains just the single largest event.
-            Higher values of `min_size_quartile` result in improved performance because less events are stored in memory and need to be
-            compared.
-
-        timedim : str
-            The name of the time dimension
-
-        xdim : str
-            The name of the x dimension
-
-        ydim : str
-            The name of the y dimension
-
-        positive : bool
-            True if da values are expected to be positive, false if they are negative. Default argument is True
-
-        Returns
-        -------
-        labels : xarray.DataArray
-            Integer labels of the connected regions.
-        """
-
-        if (self.mask == 0).all():
-            raise ValueError(
-                "Found only zeros in `mask` input. The mask should indicate valid regions with values of 1"
-            )
-
-        # Convert data to binary, define structuring element, and perform morphological closing then opening
-        binary_images = self._morphological_operations()
-
-        # Apply mask
-        binary_images_with_mask = _apply_mask(
-            binary_images, self.mask
-        )  # perhaps change to method? JB
-
-        # Filter area
-        area, min_area, binary_labels, N_initial = self._filter_area(
-            binary_images_with_mask
+def morphological_operations(
+    da:       xr.DataArray,
+    radius:   int,
+    xdim:     str,
+    ydim:     str,
+    positive: bool = True,
+) -> xr.DataArray:
+    """
+    Convert the input field to binary and apply morphological close→open
+    on each (ydim, xdim) slice independently using Dask.
+ 
+    Closing fills small interior holes and bridges narrow gaps within a
+    feature.  Opening then removes any tiny isolated patches left by
+    closing.  Padding is applied in ``wrap`` mode to handle the periodic
+    longitude boundary before each operation.
+ 
+    Parameters
+    ----------
+    da       : DataArray (time, ydim, xdim)
+    radius   : int — disk radius for the structuring element.
+               ``radius=1`` is a no-op (single-pixel element).
+    xdim     : str — name of the x (longitude) dimension
+    ydim     : str — name of the y (latitude) dimension
+    positive : bool — True → warm anomalies (>0); False → cold (<0)
+ 
+    Returns
+    -------
+    DataArray
+        Binary (0/1) field, same shape as ``da``.
+    """
+    if positive:
+        bitmap_binary = da.where(da > 0, drop=False, other=0)
+    else:
+        bitmap_binary = da.where(da < 0, drop=False, other=0)
+    bitmap_binary = bitmap_binary.where(bitmap_binary == 0, drop=False, other=1)
+ 
+    diameter = radius * 2
+    x        = np.arange(-radius, radius + 1)
+    x, y     = np.meshgrid(x, x)
+    se       = (x ** 2 + y ** 2) < radius ** 2
+ 
+    def _binary_open_close(slice_2d: np.ndarray) -> np.ndarray:
+        """Apply wrap-padded close→open to a single 2-D slice."""
+        padded = np.pad(
+            slice_2d,
+            ((diameter, diameter), (diameter, diameter)),
+            mode="wrap",
         )
-
-        # Label objects
-        labels, num = self._label_either(binary_labels, return_num=True, connectivity=3)
-
-        # Wrap labels
-        grid_res = abs(self.da[self.xdim][1] - self.da[self.xdim][0])
-        if self.da[self.xdim][-1] - self.da[self.xdim][0] >= 360 - grid_res:
-            labels_wrapped, N_final = self._wrap(labels)
+        if radius == 1:
+            s2 = padded
+        elif radius > 1:
+            s1 = scipy.ndimage.binary_closing(padded, se, iterations=1)
+            s2 = scipy.ndimage.binary_opening(s1,     se, iterations=1)
         else:
-            labels_wrapped = labels
-            N_final = np.max(labels)
+            raise ValueError("radius must be an integer >= 1")
+        return s2[diameter:-diameter, diameter:-diameter]
+ 
+    return xr.apply_ufunc(
+        _binary_open_close,
+        bitmap_binary,
+        input_core_dims=[[ydim, xdim]],
+        output_core_dims=[[ydim, xdim]],
+        output_dtypes=[bitmap_binary.dtype],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"allow_rechunk": True},
+    )
 
-        # Final labels to DataArray
-        new_labels = xr.DataArray(
-            labels_wrapped, dims=self.da.dims, coords=self.da.coords
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Area filtering
+# ──────────────────────────────────────────────────────────────────────────────
+ 
+def filter_area(
+    binary_images:    xr.DataArray,
+    xdim:             str,
+    ydim:             str,
+    min_size_quartile: float = 0.25,
+    min_area_cells:   int   = 100,
+) -> tuple[xr.DataArray, float, xr.DataArray, int]:
+    """
+    Label 2-D slices per timestep, make IDs consecutive across time,
+    wrap across the date line, then filter by object area.
+ 
+    Effective area threshold = max(min_area_cells, percentile(areas, q)).
+ 
+    Parameters
+    ----------
+    binary_images     : DataArray (time, ydim, xdim) — binary after masking
+    xdim              : str — name of the x dimension
+    ydim              : str — name of the y dimension
+    min_size_quartile : float — relative area percentile (0–1)
+    min_area_cells    : int  — absolute minimum area in grid cells
+ 
+    Returns
+    -------
+    area          : DataArray — voxel count per detected object
+    min_area      : float    — effective threshold applied
+    binary_labels : DataArray — binary field with only kept objects
+    N_initial     : int      — object count before area filtering
+    """
+    def _get_labels(slice_2d: np.ndarray) -> np.ndarray:
+        return _label_either(slice_2d, background=0)
+ 
+    labels = xr.apply_ufunc(
+        _get_labels,
+        binary_images,
+        input_core_dims=[[ydim, xdim]],
+        output_core_dims=[[ydim, xdim]],
+        output_dtypes=[binary_images.dtype],
+        vectorize=True,
+        dask="parallelized",
+    )
+    labels = xr.DataArray(
+        labels, dims=binary_images.dims, coords=binary_images.coords
+    )
+    labels = labels.where(labels > 0, drop=False, other=np.nan)
+ 
+    # Make labels consecutive across timesteps — apply offset to positive
+    # cells only; NaN cells are left untouched.
+    max_id = 0
+    for i in range(1, labels.shape[0]):
+        max_id = int(np.nanmax([max_id, labels[i - 1, :, :].max().values]))
+        vals   = labels[i, :, :].values
+        valid  = vals > 0
+        vals[valid] += max_id
+        labels[i, :, :] = vals
+ 
+    labels = labels.where(labels > 0, drop=False, other=0)
+    labels_wrapped, N_initial = wrap_labels(np.array(labels))
+ 
+    props      = regionprops(labels_wrapped.astype("int"))
+    label_ids  = [p.label for p in props]
+    labelprops = xr.DataArray(label_ids, dims=["label"],
+                               coords={"label": label_ids})
+    area = xr.DataArray(
+        [p.area for p in props], dims=["label"],
+        coords={"label": labelprops},
+    )
+ 
+    if area.size == 0:
+        raise ValueError(
+            "No objects detected. "
+            "Try lowering radius or min_size_quartile."
         )
-        new_labels = new_labels.where(new_labels != 0, drop=False, other=np.nan)
-
-        ## Metadata
-
-        # Calculate Percent of total object area retained after size filtering
-        sum_tot_area = int(np.sum(area.values))
-
-        reject_area = area.where(area <= min_area, drop=True)
-        sum_reject_area = int(np.sum(reject_area.values))
-        percent_area_reject = sum_reject_area / sum_tot_area
-
-        accept_area = area.where(area > min_area, drop=True)
-        sum_accept_area = int(np.sum(accept_area.values))
-        percent_area_accept = sum_accept_area / sum_tot_area
-
-        new_labels = new_labels.rename("labels")
-        new_labels.attrs["initial objects identified"] = int(N_initial)
-        new_labels.attrs["final objects tracked"] = int(N_final)
-        new_labels.attrs["radius"] = self.radius
-        new_labels.attrs["size quantile threshold"] = self.min_size_quartile
-        new_labels.attrs["min area"] = min_area
-        new_labels.attrs["percent area reject"] = percent_area_reject
-        new_labels.attrs["percent area accept"] = percent_area_accept
-
-        print("initial objects identified \t", int(N_initial))
-        print("final objects tracked \t", int(N_final))
-
-        return new_labels
-
-    ### PRIVATE METHODS - not meant to be called by user ###
-
-    def _morphological_operations(self):
-        """Converts xarray.DataArray to binary, defines structuring element, and performs morphological closing then opening.
-        Parameters
-        ----------
-        da     : xarray.DataArray
-                The data to label
-        radius : int
-                Length of grid spacing that defines the radius of the structuring element used in morphological closing and opening.
-                
-                Structuring elements are defined such that cells are included if their distance from the origin in index space is
-                strictly less than the radius. For example, a radius of 1 means that the structuring element includes just an
-                individual pixel (such that applying the morhological closing and opening just returns the original binary array),
-                while a radius of 2 would additionally include the eight cells cells adjacent to the origin. As the radius increases,
-                the shape of the structure element asymptotes to a circle centered on the origin.
-
-        """
-
-        # Convert images to binary. All positive values == 1, otherwise == 0
-        if self.positive == True:
-            bitmap_binary = self.da.where(self.da > 0, drop=False, other=0)
-
-        elif self.positive == False:
-            bitmap_binary = self.da.where(self.da < 0, drop=False, other=0)
-
-        bitmap_binary = bitmap_binary.where(bitmap_binary == 0, drop=False, other=1)
-
-        # Define structuring element
-        diameter = self.radius * 2
-        x = np.arange(-self.radius, self.radius + 1)
-        x, y = np.meshgrid(x, x)
-        r = x**2 + y**2
-        se = r < self.radius**2
-
-        def binary_open_close(bitmap_binary):
-            bitmap_binary_padded = np.pad(
-                bitmap_binary, ((diameter, diameter), (diameter, diameter)), mode="wrap"
+ 
+    pct_threshold = float(np.percentile(area, min_size_quartile * 100))
+    min_area      = float(max(min_area_cells, pct_threshold))
+    print(f"area threshold : {min_area:.0f} cells  "
+          f"(floor={min_area_cells}, "
+          f"percentile={pct_threshold:.1f})")
+ 
+    keep_labels   = labelprops.where(area >= min_area, drop=True)
+    keep_where    = np.isin(labels_wrapped, keep_labels)
+    out_labels    = xr.DataArray(
+        np.where(keep_where, labels_wrapped, 0),
+        dims=binary_images.dims,
+        coords=binary_images.coords,
+    )
+    binary_labels = out_labels.where(out_labels == 0, drop=False, other=1)
+ 
+    return area, min_area, binary_labels, N_initial
+ 
+ 
+# ──────────────────────────────────────────────────────────────────────────────
+# 3-D connected-component labelling
+# ──────────────────────────────────────────────────────────────────────────────
+ 
+def label_3d(
+    binary_labels: xr.DataArray,
+    connectivity:  int = 3,
+) -> tuple[np.ndarray, int]:
+    """
+    Apply 3-D connected-component labelling across (time, lat, lon)
+    simultaneously.
+ 
+    Objects that are spatially adjacent at adjacent timesteps are merged
+    into a single event.
+ 
+    Parameters
+    ----------
+    binary_labels : DataArray (time, ydim, xdim) — binary field
+    connectivity  : int — passed to skimage/dask_image label (default 3)
+ 
+    Returns
+    -------
+    labels : ndarray (time, ydim, xdim)
+    n      : int — number of unique labels
+    """
+    return _label_either(binary_labels, return_num=True, connectivity=connectivity)
+ 
+ 
+# ──────────────────────────────────────────────────────────────────────────────
+# Date-line wrapping
+# ──────────────────────────────────────────────────────────────────────────────
+ 
+def wrap_labels(labels: np.ndarray) -> tuple[np.ndarray, int]:
+    """
+    Merge labels that straddle the periodic (date-line) longitude boundary.
+ 
+    Compares the first and last longitude columns.  Any label in the last
+    column that coincides spatially with a label in the first column is
+    reassigned to the first-column label, joining features that cross the
+    date line into a single event.
+ 
+    Parameters
+    ----------
+    labels : ndarray (time, ydim, xdim) — integer label array
+ 
+    Returns
+    -------
+    labels_wrapped : ndarray — relabelled with consecutive IDs after wrapping
+    N              : int     — number of unique labels after wrapping
+    """
+    first_column = labels[..., 0]
+    last_column  = labels[..., -1]
+    unique_first = np.unique(first_column[first_column > 0])
+ 
+    for val in unique_first:
+        first      = np.where(first_column == val)
+        last       = last_column[first[0], first[1]]
+        bad_labels = np.unique(last[last > 0])
+        labels[np.isin(labels, bad_labels)] = val
+ 
+    labels_wrapped = (np.unique(labels, return_inverse=True)[1]
+                      .reshape(labels.shape))
+    return labels_wrapped, int(np.max(labels_wrapped))
+ 
+ 
+# ──────────────────────────────────────────────────────────────────────────────
+# Internal helper
+# ──────────────────────────────────────────────────────────────────────────────
+ 
+def _label_either(data: np.ndarray | dsa.Array, **kwargs):
+    """
+    Apply connected-component labelling to a NumPy or Dask array.
+ 
+    Uses ``skimage.measure.label`` for NumPy arrays and
+    ``dask_image.ndmeasure.label`` for Dask arrays.
+ 
+    Parameters
+    ----------
+    data     : ndarray or dask Array
+    **kwargs : passed to the underlying label function
+ 
+    Returns
+    -------
+    Labelled array (and number of labels if ``return_num=True``).
+ 
+    Raises
+    ------
+    ImportError
+        If ``data`` is a Dask array and ``dask_image`` is not installed.
+    """
+    if isinstance(data, dsa.Array):
+        try:
+            from dask_image.ndmeasure import label as label_dask
+            def label_func(a, **kwargs):
+                ids, _ = label_dask(a, **kwargs)
+                return ids
+        except ImportError:
+            raise ImportError(
+                "dask_image is required for Dask arrays. "
+                "Install it with `pip install dask_image` or call "
+                ".load() on your data before tracking."
             )
-            # If the radius is equal to 1, the structuring element is just an individual pixel, so
-            # it is faster to just skip the calls to `binary_closing` and `binary_opening`
-            if self.radius == 1:
-                s2 = bitmap_binary_padded
-            elif self.radius > 1:
-                s1 = scipy.ndimage.binary_closing(bitmap_binary_padded, se, iterations=1)
-                s2 = scipy.ndimage.binary_opening(s1, se, iterations=1)
-            else:
-                raise ValueError("radius must be an integer greater than or equal to 1")
-                
-            unpadded = s2[diameter:-diameter, diameter:-diameter]
-            return unpadded
-
-        mo_binary = xr.apply_ufunc(
-            binary_open_close,
-            bitmap_binary,
-            input_core_dims=[[self.ydim, self.xdim]],
-            output_core_dims=[[self.ydim, self.xdim]],
-            output_dtypes=[bitmap_binary.dtype],
-            vectorize=True,
-            dask="parallelized",
-        )
-        return mo_binary
-
-    def _filter_area(self, binary_images):
-        """calculate area with regionprops"""
-
-        def get_labels(binary_images):
-            blobs_labels = self._label_either(binary_images, background=0)
-            return blobs_labels
-
-        labels = xr.apply_ufunc(
-            get_labels,
-            binary_images,
-            input_core_dims=[[self.ydim, self.xdim]],
-            output_core_dims=[[self.ydim, self.xdim]],
-            output_dtypes=[binary_images.dtype],
-            vectorize=True,
-            dask="parallelized",
-        )
-
-        labels = xr.DataArray(
-            labels, dims=binary_images.dims, coords=binary_images.coords
-        )
-        labels = labels.where(labels > 0, drop=False, other=np.nan)
-
-        # The labels are repeated each time step, therefore we relabel them to be consecutive
-        max_id = 0
-        for i in range(1, labels.shape[0]):
-            max_id = np.nanmax([max_id, labels[i - 1, :, :].max().values])
-            labels[i, :, :] = labels[i, :, :].values + max_id
-
-        labels = labels.where(labels > 0, drop=False, other=0)
-        labels_wrapped, N_initial = self._wrap(np.array(labels))
-
-        # Calculate Area of each object and keep objects larger than threshold
-        props = regionprops(labels_wrapped.astype("int"))
-
-        labelprops = [p.label for p in props]
-        labelprops = xr.DataArray(
-            labelprops, dims=["label"], coords={"label": labelprops}
-        )
-
-        area = xr.DataArray(
-            [p.area for p in props], dims=["label"], coords={"label": labelprops}
-        )  # Number of pixels of the region.
-
-        if area.size == 0:
-            raise ValueError(
-                f"No objects were detected. Try changing radius or min_size_quartile parameters."
-            )
-
-        min_area = np.percentile(area, self.min_size_quartile * 100)
-        print(f"minimum area: {min_area}")
-
-        keep_labels = labelprops.where(area >= min_area, drop=True)
-        keep_where = np.isin(labels_wrapped, keep_labels)
-        out_labels = xr.DataArray(
-            np.where(keep_where == False, 0, labels_wrapped),
-            dims=binary_images.dims,
-            coords=binary_images.coords,
-        )
-
-        # Convert images to binary. All positive values == 1, otherwise == 0
-        binary_labels = out_labels.where(out_labels == 0, drop=False, other=1)
-
-        return area, min_area, binary_labels, N_initial
-
-    def _label_either(self, data, **kwargs):
-        if isinstance(data, dsa.Array):
-            try:
-                from dask_image.ndmeasure import label as label_dask
-
-                def label_func(a, **kwargs):
-                    ids, num = label_dask(a, **kwargs)
-                    return ids
-
-            except ImportError:
-                raise ImportError(
-                    "Dask_image is required to use this function on Dask arrays. "
-                    "Either install dask_image or else call .load() on your data."
-                )
-        else:
-            label_func = label_np
-        return label_func(data, **kwargs)
-
-    def _wrap(self, labels):
-        """Impose periodic boundary and wrap labels"""
-        first_column = labels[..., 0]
-        last_column = labels[..., -1]
-
-        unique_first = np.unique(first_column[first_column > 0])
-
-        # This loop iterates over the unique values in the first column, finds the location of those values in
-        # the first columnm and then uses that index to replace the values in the last column with the first column value
-        for i in enumerate(unique_first):
-            first = np.where(first_column == i[1])
-            last = last_column[first[0], first[1]]
-            bad_labels = np.unique(last[last > 0])
-            replace = np.isin(labels, bad_labels)
-            labels[replace] = i[1]
-
-        labels_wrapped = np.unique(labels, return_inverse=True)[1].reshape(labels.shape)
-
-        # recalculate the total number of labels
-        N = np.max(labels_wrapped)
-
-        return labels_wrapped, N
+    else:
+        label_func = label_np
+    return label_func(data, **kwargs)

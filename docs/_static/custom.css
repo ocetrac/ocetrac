@@ -1,0 +1,66 @@
+:root {
+    --pst-color-primary:   #1a6ea8;
+    --pst-color-secondary: #0d4f7c;
+    --pst-color-accent:    #2ab5c8;
+}
+
+.bd-header {
+    background-color: #0d2d48 !important;
+    border-bottom: 2px solid #2ab5c8;
+}
+
+.bd-sidebar .current > a {
+    color: #2ab5c8 !important;
+    font-weight: 600;
+}
+
+div.highlight {
+    border-left: 3px solid #2ab5c8;
+    border-radius: 0 4px 4px 0;
+    background-color: #f8f9fa;
+}
+
+.bd-sidebar a:hover {
+    color: #2ab5c8 !important;
+    transition: color 0.2s ease;
+}
+
+.bd-sidebar .current > a:focus {
+    outline: 2px solid #2ab5c8;
+    outline-offset: 2px;
+}
+
+/* inline code */
+code.literal {
+    background-color: #eef4fb;
+    color: #1a6ea8;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 0.9em;
+}
+
+/* footer */
+.bd-footer {
+    background-color: #0d2d48;
+    color: #aac8e0;
+    border-top: 1px solid #2ab5c8;
+}
+
+/* on-this-page heading */
+.bd-toc .toc-entry a {
+    color: var(--color-text-secondary);
+}
+.bd-toc .toc-entry a:hover {
+    color: #2ab5c8;
+}
+
+/* api function signatures */
+.sig-name {
+    color: #1a6ea8 !important;
+}
+
+/* admonition note */
+.admonition.note {
+    border-left: 4px solid #1a6ea8;
+    background-color: #eef4fb;
+}

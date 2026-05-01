@@ -1,8 +1,3 @@
-.. Ocetrac documentation master file, created by
-   sphinx-quickstart on Mon Jun  9 12:27:18 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Ocetrac
 ===================================
 
@@ -17,7 +12,7 @@ Ocetrac
 .. image:: https://codecov.io/gh/ocetrac/ocetrac/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/ocetrac/ocetrac
 
-.. image:: https://img.shields.io/badge/License-MIT-lightgray.svg?style=flt-square
+.. image:: https://img.shields.io/badge/License-MIT-lightgray.svg?style=flat-square
    :target: https://opensource.org/licenses/MIT
 
 .. image:: https://img.shields.io/pypi/v/ocetrac.svg
@@ -29,12 +24,79 @@ Ocetrac
 .. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
    :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocetrac-feedstock?branchName=master
-   :target: https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=13414&branchName=maste
-
-
 |
-Ocetrac is a Python 3.6+ package designed to label and track the evolution of unique geospatial features in gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the Climate Data Science Lab at Columbia University. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.
+
+
+Label and track the evolution of geospatial features in gridded datasets.
+Ocetrac operates lazily with Dask for memory-efficient, parallelised execution and provides two tracking algorithms:
+
+- **SurfTrack** — surface events ``(time, lat, lon)``
+- **DeepTrack** — subsurface volumetric events ``(time, depth, lat, lon)``
+ 
+----
+ 
+Quick start
+-----------
+
+**SurfTrack**
+
+.. code-block:: python
+ 
+   from ocetrac.preprocessing import compute_anomalies, threshold_features
+   from ocetrac.SurfTrack import SurfTracker
+ 
+   mean, trend, seas, features, anom = calculate_anomalies_trend_features(
+    ds, 0.9)
+ 
+   mask    = xr.where(~ds.isel(time=0).isnull(), 1, 0)
+   tracker = SurfTracker(
+       features,
+       mask,
+       radius            = 2,
+       min_size_quartile = 0.25,
+       min_area_cells    = 100,
+       timedim           = 'time',
+       xdim              = 'lon',
+       ydim              = 'lat',
+       positive          = True,
+   )
+   result = tracker.run()
+   tracker.summary()
+
+**DeepTrack**
+
+.. code-block:: python
+ 
+   from ocetrac.preprocessing import compute_anomalies, threshold_features
+   from ocetrac.DeepTrack import DeepTracker
+   from ocetrac.DeepTrack.grid import build_cell_volume
+ 
+   # Compute anomalies and threshold at the 90th percentile
+   anom = compute_anomalies(ds)
+   features, _ = threshold_features(anom, q=0.9)
+ 
+   # Build cell volume for weighted tracking
+   cell_volume = build_cell_volume(TAREA, z_t, n_z=20).compute()
+   cell_vol_np = cell_volume.values
+ 
+   # Run the tracker
+   tracker = DeepTracker(
+        features,
+        radius         = 3,
+        min_area_cells = 200,
+        min_quantile   = 0.25, 
+        contain_thresh = 0.3,
+        alpha          = 0.5,
+        frac_filter    = 0.25,
+        connect_z      = True,
+        positive       = True,
+        n_z            = 20,
+    )
+
+    result_full = tracker.run(cell_volume=cell_vol_np)
+    tracker.summary()
+ 
+----
 
 For recommendations or bug reports, please visit: https://github.com/ocetrac/ocetrac/issues/new
 
@@ -48,18 +110,19 @@ For recommendations or bug reports, please visit: https://github.com/ocetrac/oce
 
 .. toctree::
    :maxdepth: 2
-   :caption: Users Guide
+   :caption: Trackers
+
+    SurfTrack
+    DeepTrack
 
 .. toctree::
    :maxdepth: 2
-   :caption: Help and Reference
+   :caption: Help & Reference
 
-   SciPy 2021 Talk <https://ocetrac.github.io/scipy2021-talk/#/>
-   GitHub Repo <https://github.com/ocetrac/ocetrac>
    api
-   authors
    contributing
    wishlist
+   whats-new
    references
 
 Indices and tables

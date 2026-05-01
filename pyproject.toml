@@ -6,7 +6,7 @@ build-backend = "setuptools.backends.legacy:build"
 fallback_version = "0.1.5"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
-write_to = "ocetrac/_ocetrac_version.py"
+write_to = "ocetrac/_version.py"
 
 [tool.interrogate]
 ignore-init-method = true

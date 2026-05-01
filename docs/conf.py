@@ -32,8 +32,10 @@ import ocetrac  # isort:skip
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "ocetrac"
-copyright = "2025, ocetrac"
-author = "ocetrac"
+html_title = "Ocetrac"
+html_short_title = "Ocetrac"
+copyright = "2026, Ocetrac"
+author = "Ocetrac"
 try:
     release = _get_version("ocetrac")
 except PackageNotFoundError:
@@ -78,10 +80,6 @@ html_static_path = ["_static"]
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "logo": {
-        "image_light": "img/tranparent_logo.png",
-        "image_dark":  "img/tranparent_logo.png",
-    },
     "icon_links": [
         {
             "name": "GitHub",
@@ -95,14 +93,14 @@ html_theme_options = {
         },
     ],
     "show_toc_level": 2,
-    "navigation_depth": 3,
+    "navigation_depth": 4,
     "footer_start": ["copyright"],
     "footer_end":   ["sphinx-version"],
+    "collapse_navigation": False,
 }
-
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = "img/tranparent_logo.png"
+html_sidebars = {
+    "**": ["sidebar-nav-bs"]
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

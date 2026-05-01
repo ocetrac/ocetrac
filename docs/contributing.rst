@@ -134,9 +134,6 @@ Preparing Pull Requests
    testing recommendations.
 
 
-#. Add yourself to the `Project Contributors <https://ocetrac.readthedocs.io/en/latest/authors.html>`_ list via ``./docs/authors.md``.
-
-
 #. Finally, submit a pull request (PR) through the GitHub website using this data::
 
     head-fork: YOUR_GITHUB_USERNAME/ocetrac

@@ -13,3 +13,7 @@ SurfTrack     : 3-D connected-component labelling and temporal tracking
               (time, nlat, nlon); tracks at one-depth level through
                time only
 """
+from .SurfTrack import SurfTracker
+from .SurfTrack.tracker import apply_mask as _apply_mask
+
+Tracker = SurfTracker

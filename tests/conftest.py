@@ -5,15 +5,18 @@
 #
 # Directory layout assumed:
 #
-#   ocetrac/               ← repo root
+#   ocetrac/                                  ← repo root
 #   ├── tests/
-#   │   ├── conftest.py    ← this file
+#   │   ├── conftest.py                       ← this file
+#   │   ├── test_surftrack.py
+#   │   ├── test_surftrack_measures.py
 #   │   └── test_deeptrack.py
-#   └── ocetrac/           ← Python package
+#   └── ocetrac/                              ← Python package
 #       ├── __init__.py
 #       ├── DeepTrack/
 #       ├── preprocessing/
 #       └── SurfTrack/
+#           └── measures/
  
 import sys
 import os

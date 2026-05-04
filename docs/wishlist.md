@@ -5,7 +5,6 @@ By adopting open-source best practices, we hope Ocetrac will grow into a widely 
 
 Planned features and improvements
 ---------------------------------
-- Add land overlay to the bottom of the plotting function for DeepTrack
 - Make periodic boundaries work with DeepTrack
 - Improve documentation with additional examples
 - Optimize Dask integration for larger-than-memory datasets

@@ -29,7 +29,7 @@ def compute_dask_quantile(anom_data: xr.DataArray, q: float = 0.9) -> xr.DataArr
     DataArray with the time dimension removed.
     """
     dask_array     = anom_data.data
-    quantile_array = anom_data.quantile(q, dim="time")
+    quantile_array = anom_data.chunk({"time": -1}).quantile(q, dim="time")
 
     return xr.DataArray(
         quantile_array,

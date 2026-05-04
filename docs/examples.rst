@@ -1,5 +1,5 @@
-Examples
-========
+Examples and Documentation
+==========================
 
 Ocetrac has several tutorial Jupyter notebooks available to help you get started. Static 
 examples are provided to demonstrate different use cases of Ocetrac. 
@@ -7,11 +7,10 @@ examples are provided to demonstrate different use cases of Ocetrac.
 .. raw:: html
 
    <div class="gallery-grid">
-
      <div class="gallery-card">
        <a href="examples/SurfTrack_tutorial.html">
-         <div class="gallery-thumb" style="background:#1a6ea8">
-           <span class="gallery-icon">📡</span>
+         <div class="gallery-thumb">
+           <img src="_static/surftrack_preview.png" alt="SurfTrack Tutorial" />
          </div>
          <div class="gallery-body">
            <div class="gallery-title">SurfTrack Tutorial</div>
@@ -23,7 +22,6 @@ examples are provided to demonstrate different use cases of Ocetrac.
      <div class="gallery-card">
        <a href="examples/SurfTrack_measures_tutorial.html">
          <div class="gallery-thumb" style="background:#2ab5c8">
-           <span class="gallery-icon">📐</span>
          </div>
          <div class="gallery-body">
            <div class="gallery-title">SurfTrack Measures</div>
@@ -35,11 +33,10 @@ examples are provided to demonstrate different use cases of Ocetrac.
      <div class="gallery-card">
        <a href="examples/DeepTrack_tutorial.html">
          <div class="gallery-thumb" style="background:#0d4f7c">
-           <span class="gallery-icon">🔵</span>
          </div>
          <div class="gallery-body">
            <div class="gallery-title">DeepTrack Tutorial</div>
-           <div class="gallery-desc">Track subsurface volumetric marine heatwaves in 4-D (time, depth, lat, lon) CESM2 data.</div>
+           <div class="gallery-desc">Track subsurface marine heatwaves in 4-D (time, depth, lat, lon) CESM2 data.</div>
          </div>
        </a>
      </div>
@@ -93,11 +90,35 @@ examples are provided to demonstrate different use cases of Ocetrac.
      color: var(--pst-color-text-muted, #666);
      line-height: 1.5;
    }
+  .gallery-thumb {
+    height: 120px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: '#f0f0f0';
+  }
+  .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
    </style>
 
 .. toctree::
    :maxdepth: 2
    :hidden:
+   :caption: Overview
+
+   examples/ocetrac_overview
+   examples/quickstart
+   examples/working_with_output
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Tutorials
 
    examples/SurfTrack_tutorial
    examples/SurfTrack_measures_tutorial

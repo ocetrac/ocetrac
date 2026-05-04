@@ -107,6 +107,11 @@ a.navbar-brand, .navbar-brand {
     display: none;
 }
 
+.bd-sidebar-primary p.caption span.caption-text {
+    font-size: 1em;
+    text-transform: none;
+}
+
 .sidebar-nav-heading {
     font-size: 0.75rem !important;
     font-weight: 600;
@@ -137,4 +142,13 @@ body[data-page="index"] .bd-sidebar-primary {
 [data-theme="dark"] code.literal {
     background-color: #1a3550 !important;
     color: #2ab5c8 !important;
+}
+
+/* Truncate long API entries in the on-this-page sidebar */
+.bd-toc .toc-entry a {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    display: inline-block;
 }

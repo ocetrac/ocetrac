@@ -34,6 +34,7 @@ Ocetrac provides two core tracking algorithms:
 
 - **SurfTrack** — surface features with dimensions ``(time, lat, lon)``
 - **DeepTrack** — subsurface volumetric features with dimensions ``(time, depth, lat, lon)``
+
 .. raw:: html
  
    <div style="margin-top: -1.5em;"></div>
@@ -75,23 +76,9 @@ If you need more help with Parcels, try the `Discussions page on GitHub <https:/
 ----
 
 .. toctree::
-   :caption: Getting started
    :hidden:
 
-   installation
-   examples
-
-.. toctree::
-   :caption: Trackers
-   :hidden:
-
-
-.. toctree::
-   :caption: Help & Reference
-   :hidden:
-
-   api
-   contributing
-   wishlist
-   whats-new
-   references
+   Home <self>
+   Installation <installation>
+   Examples and Documentation <examples>
+   API Reference <api>

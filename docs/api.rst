@@ -7,22 +7,6 @@ on how to use the functions.
 
 ----
 
-Preprocessing
--------------
-
-.. currentmodule:: ocetrac.preprocessing
-
-.. autosummary::
-   :toctree: ./_generated/
-
-   preprocessing.compute_anomalies
-   preprocessing.clean_binary
-   preprocessing.threshold_features
-   utils.compute_dask_quantile
-   utils.get_xarray_memory_usage
-
-----
-
 SurfTrack
 ---------
 

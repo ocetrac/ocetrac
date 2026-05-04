@@ -97,10 +97,13 @@ html_theme_options = {
     "footer_start": ["copyright"],
     "footer_end":   ["sphinx-version"],
     "collapse_navigation": False,
+    "navbar_center": ["navbar-nav", "navbar-more-dropdown"],
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs"]
 }
+
+html_favicon = "_static/logo.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

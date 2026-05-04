@@ -5,8 +5,8 @@
 }
 
 .bd-header {
-    background-color: #0d2d48 !important;
-    border-bottom: 2px solid #2ab5c8;
+    /* background-color: #e6f3fe !important; */
+    border-bottom: 3px solid #2ab5c8;
 }
 
 .bd-sidebar .current > a {
@@ -41,9 +41,14 @@ code.literal {
 
 /* footer */
 .bd-footer {
-    background-color: #0d2d48;
-    color: #aac8e0;
+    background-color: #ffffff;
+    color: #444444;
     border-top: 1px solid #2ab5c8;
+}
+
+/* force the header brand text to be plain Ocetrac and bold */
+a.navbar-brand, .navbar-brand {
+    font-weight: 700 !important;
 }
 
 /* on-this-page heading */
@@ -63,4 +68,73 @@ code.literal {
 .admonition.note {
     border-left: 4px solid #1a6ea8;
     background-color: #eef4fb;
+}
+
+/* ── sidebar nav ─────────────────────────────────────────── */
+.bd-sidenav a,
+#globaltoc a {
+    color: #444444 !important;
+    text-decoration: none !important;
+    font-weight: 400;
+}
+
+.bd-sidenav a:hover,
+#globaltoc a:hover {
+    color: #2ab5c8 !important;
+    text-decoration: none !important;
+    font-weight: 600;
+}
+
+.bd-sidenav .current > a,
+#globaltoc .current > a {
+    color: #444444 !important;
+    text-decoration: underline !important;
+    font-weight: 400;
+}
+
+/* section navigation heading */
+.bd-sidebar h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+/* hide section nav on the home page */
+.homepage .bd-sidebar-primary {
+    display: none;
+}
+
+.sidebar-nav-heading {
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+/* hide sidebar on index page only */
+body[data-page="index"] .bd-sidebar-primary {
+    display: none;
+}
+
+/* ── code blocks — dark mode ─────────────────────────────── */
+[data-theme="dark"] div.highlight {
+    background-color: #1a2332 !important;
+    border-left: 3px solid #2ab5c8;
+    border-radius: 0 4px 4px 0;
+}
+
+[data-theme="dark"] div.highlight pre {
+    background-color: #1a2332 !important;
+    color: #e0e0e0 !important;
+}
+
+/* inline code */
+[data-theme="dark"] code.literal {
+    background-color: #1a3550 !important;
+    color: #2ab5c8 !important;
 }

@@ -2,7 +2,18 @@ Examples and Documentation
 ==========================
 
 Ocetrac has several tutorial Jupyter notebooks available to help you get started. Static 
-examples are provided to demonstrate different use cases of Ocetrac. 
+examples are provided to demonstrate different use cases of Ocetrac. We also provide a set of documentation pages 
+that explain the implementation details of each tracking method.
+
+Overview
+--------
+
+- `Ocetrac Overview <examples/ocetrac_overview.html>`_ — Architecture, data flow, and key concepts behind SurfTrack and DeepTrack.
+- `Quickstart <examples/quickstart.html>`_ — Get up and running with SurfTrack and DeepTrack in a few lines of code.
+- `Working with output <examples/working_with_output.html>`_ — Read, analyse, plot, and animate tracked event output.
+ 
+Tutorials
+--------
 
 .. raw:: html
 

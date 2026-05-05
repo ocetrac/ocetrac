@@ -21,7 +21,8 @@ examples are provided to demonstrate different use cases of Ocetrac.
 
      <div class="gallery-card">
        <a href="examples/SurfTrack_measures_tutorial.html">
-         <div class="gallery-thumb" style="background:#2ab5c8">
+        <div class="gallery-thumb">
+           <img src="_static/SurfTrack_measures_preview.png" alt="SurfTrack Measures" />
          </div>
          <div class="gallery-body">
            <div class="gallery-title">SurfTrack Measures</div>
@@ -32,7 +33,8 @@ examples are provided to demonstrate different use cases of Ocetrac.
 
      <div class="gallery-card">
        <a href="examples/DeepTrack_tutorial.html">
-         <div class="gallery-thumb" style="background:#0d4f7c">
+         <div class="gallery-thumb">
+           <img src="_static/deeptrack_preview.png" alt="DeepTrack Tutorial" />
          </div>
          <div class="gallery-body">
            <div class="gallery-title">DeepTrack Tutorial</div>

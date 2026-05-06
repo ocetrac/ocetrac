@@ -1,7 +1,7 @@
 Ocetrac Structure Overview
 ==========================
 
-Ocetrac is a flexible tracking framework designed for geophysical feature analysis. While 
+Ocetrac is a tracking framework designed for geophysical feature analysis. While 
 demonstrated here using temperature anomalies to identify marine heatwaves 
 (MHWs), the algorithm is variable-agnostic. It can be applied to any spatiotemporal field 
 that can be thresholded into spatially coherent features and has sufficient temporal resolution 
@@ -17,38 +17,24 @@ High-Level Architecture
 -----------------------
 
 **DeepTrack** operates on four-dimensional fields with dimensions 
-``(time, depth, lat, lon)``, enabling the tracking of subsurface features across depth layers 
-as well as time. **SurfTrack** operates on one depth layer (such as the sea surface) with 
-dimensions ``(time, lat, lon)`` and is designed for phenomena such as marine heatwaves, cold 
-spells, and phytoplankton blooms.
+``(time, depth, lat, lon)``, allowing for the tracking of subsurface features across depth layers 
+as well as time. **SurfTrack** operates on one depth layer (such as the surface layer) with 
+dimensions ``(time, lat, lon)`` and is designed for phenomena such as surface marine heatwaves andcold 
+spells.
 
-Both trackers expose a consistent interface: the user provides an ``xarray.DataArray``, a 
+Both trackers have a consistent interface: the user provides an ``xarray.DataArray``, a 
 threshold to define anomalous regions, and a set of morphological parameters controlling how 
 features are defined and connected. Ocetrac returns a labelled ``xarray.DataArray`` where each 
 integer value corresponds to a unique tracked event.
 
 ----
 
-Data Flow in DeepTrack
----------
-
-The diagram below illustrates the DeepTrack data flow pipeline from raw input to labelled output.
-
-.. figure:: /_static/deeptrack_dataflow_ss.png
-   :alt: DeepTrack data flow diagram
-   :align: center
-   :width: 100%
-
-   *Data flow through the DeepTrack pipeline, from raw gridded input to labelled events.*
-
-----
-
 Input Specifications and Preprocessing
 ---------------------------------------
 
-Both trackers require input data as an ``xarray.DataArray``. DeepTrack expects dimensions 
+Both tracking algorithms require input data as an ``xarray.DataArray``. DeepTrack expects dimensions 
 ``(time, depth, lat, lon)``; SurfTrack expects ``(time, lat, lon)``. The spatial coordinates 
-should be regular latitude and longitude, and the time dimension should be uniformly spaced 
+should be latitude and longitude, and the time dimension should be uniformly spaced 
 to ensure optimal tracking performance. Temporal gaps can be filled using linear interpolation 
 to maintain continuity.
 
@@ -67,9 +53,17 @@ spatiotemporal field.
 
 ----
 
-DeepTrack Pipeline
-------------------
+DeepTrack Workflow
+---------
 
+The diagram below illustrates the DeepTrack workflow from raw input to labelled output.
+
+.. figure:: /_static/deeptrack_dataflow_ss.png
+   :alt: DeepTrack data flow diagram
+   :align: center
+   :width: 100%
+
+----
 DeepTrack runs a six-step pipeline to produce a labelled four-dimensional event array. Each 
 step can be called individually or the full pipeline can be executed in one call via 
 :meth:`~ocetrac.DeepTrack.DeepTracker.run`.
@@ -77,9 +71,9 @@ step can be called individually or the full pipeline can be executed in one call
 Step 1 — Morphological cleaning
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The input field is binarised and morphologically cleaned using a close→open sequence 
-(see `Morphological operations`_ below). This produces a binary ``DataArray`` with the same 
-dimensions as the input, where ``1`` marks anomalous regions and ``0`` marks background.
+The input field is binarised and morphologically cleaned using a close→open sequence. This produces a 
+binary ``DataArray`` with the same dimensions as the input, where ``1`` marks anomalous regions and 
+``0`` marks background.
 
 Step 2 — 2-D connected-component labelling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -152,12 +146,12 @@ Implementation example
 
 ----
 
-SurfTrack Pipeline
+SurfTrack Workflow
 ------------------
  
 SurfTrack operates on three-dimensional data ``(time, lat, lon)`` and runs a four-step 
 pipeline: **clean → filter → track → postprocess**. Its approach to temporal linking 
-differs fundamentally from DeepTrack. Rather than linking objects timestep-by-timestep 
+differs from DeepTrack. Rather than linking objects timestep-by-timestep 
 using a containment score, SurfTrack applies 3-D connected-component labelling across 
 the entire ``(time, lat, lon)`` cube simultaneously, which produces a looser, more 
 permissive connectivity in the temporal direction.
@@ -168,8 +162,6 @@ The diagram below illustrates the DeepTrack data flow pipeline from raw input to
    :alt: SurfTrack data flow diagram
    :align: center
    :width: 100%
-
-   *Data flow through the SurfTrack pipeline, from raw gridded input to labelled events.*
 
 ----
  
@@ -199,8 +191,7 @@ fine-scale structure at the risk of retaining noise. For 0.25° resolution data:
 - ``R`` = 6–8 grid cells (1.5–2°): Emphasises larger, more coherent structures
 - ``R`` > 8 grid cells: May merge distinct features or fail to identify valid objects
  
-For higher-resolution data, ``R`` should be scaled proportionally — for 0.125° data 
-double ``R`` to maintain an equivalent physical filter scale.
+For higher-resolution data, ``R`` should be scaled proportionally.
  
 Step 2 — Area filtering
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -208,15 +199,11 @@ Step 2 — Area filtering
 Each ``(lat, lon)`` slice is labelled with 2-D connected components, IDs are made 
 consecutive across timesteps, and the date-line boundary is handled via 
 ``wrap_labels`` (see below). Objects smaller than the effective area threshold are 
-then discarded:
- 
-.. code-block:: text
- 
-   effective threshold = max(min_area_cells, percentile(areas, min_size_quartile))
- 
-This dual threshold ensures that very small objects are always removed (via 
-``min_area_cells``) while also adapting to the distribution of detected object sizes 
-(via ``min_size_quartile``).
+then discarded. The effective threshold is defined as the maximum of an absolute minimum area 
+(``min_area_cells``) and a relative area threshold based on the distribution of detected 
+object sizes (the ``min_size_quartile`` percentile). This dual thresholding approach ensures
+that very small objects are always removed while also adapting to the size distribution of
+detected features in the dataset.
  
 Step 3 — 3-D connected-component labelling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

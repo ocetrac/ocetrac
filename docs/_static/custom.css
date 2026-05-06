@@ -71,45 +71,40 @@ a.navbar-brand, .navbar-brand {
 }
 
 /* ── sidebar nav ─────────────────────────────────────────── */
-.bd-sidenav a,
-#globaltoc a {
+.bd-sidebar-primary .nav-link {
     color: #444444 !important;
     text-decoration: none !important;
     font-weight: 400;
 }
 
-.bd-sidenav a:hover,
-#globaltoc a:hover {
+.bd-sidebar-primary .nav-link:hover {
     color: #2ab5c8 !important;
     text-decoration: none !important;
     font-weight: 600;
 }
 
-.bd-sidenav .current > a,
-#globaltoc .current > a {
-    color: #444444 !important;
-    text-decoration: underline !important;
-    font-weight: 400;
+.bd-sidebar-primary .current > .nav-link,
+.bd-sidebar-primary .nav-link.active {
+    color: #1a6ea8 !important;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+/* section caption headers (Overview, Tutorials etc.) */
+.bd-sidebar-primary p.caption span.caption-text {
+    font-size: 1em;
+    text-transform: none;
+    color: #444444;
 }
 
 /* section navigation heading */
-.bd-sidebar h3 {
+.bd-sidebar-primary h3 {
     font-size: 0.85rem;
     font-weight: 600;
     color: #444;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
-}
-
-/* hide section nav on the home page */
-.homepage .bd-sidebar-primary {
-    display: none;
-}
-
-.bd-sidebar-primary p.caption span.caption-text {
-    font-size: 1em;
-    text-transform: none;
 }
 
 .sidebar-nav-heading {
@@ -144,6 +139,28 @@ body[data-page="index"] .bd-sidebar-primary {
     color: #2ab5c8 !important;
 }
 
+/* ── code blocks — dark mode ─────────────────────────────── */
+[data-theme="dark"] div.highlight {
+    background-color: #1a2332 !important;
+    border-left: 3px solid #2ab5c8;
+    border-radius: 0 4px 4px 0;
+}
+
+[data-theme="dark"] div.highlight pre {
+    background-color: #1a2332 !important;
+    color: #e0e0e0 !important;
+}
+
+/* inline code */
+[data-theme="dark"] code.literal {
+    background-color: #1a3550 !important;
+    color: #2ab5c8 !important;
+}
+
+/* sidebar caption headers */
+[data-theme="dark"] .bd-sidebar-primary p.caption span.caption-text {
+    color: #cccccc;
+}
 /* Truncate long API entries in the on-this-page sidebar */
 .bd-toc .toc-entry a {
     white-space: nowrap;

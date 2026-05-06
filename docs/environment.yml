@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - bzip2=1.0.8
-  - ca-certificates=2026.4.22=hbd8a1cb_0
+  - ca-certificates=2026.4.22
   - expat=2.7.1
   - libcxx=19.1.7
   - libffi=3.4.4
@@ -121,3 +121,4 @@ dependencies:
       - webencodings==0.5.1
       - xarray==2026.4.0
       - zipp==3.23.1
+      - libgcc==14.0.0

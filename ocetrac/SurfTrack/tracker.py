@@ -177,6 +177,7 @@ def filter_area(
         output_dtypes=[binary_images.dtype],
         vectorize=True,
         dask="parallelized",
+        dask_gufunc_kwargs={"allow_rechunk": True},
     )
     labels = xr.DataArray(
         labels, dims=binary_images.dims, coords=binary_images.coords

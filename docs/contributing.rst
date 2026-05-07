@@ -1,4 +1,3 @@
-=====================
 Contribution Guide
 =====================
 
@@ -132,9 +131,6 @@ Preparing Pull Requests
    low at the moment due to lack of tests. If you are able to write tests, please
    stick to `xarray <http://xarray.pydata.org/en/stable/contributing.html>`_'s
    testing recommendations.
-
-
-#. Add yourself to the `Project Contributors <https://ocetrac.readthedocs.io/en/latest/authors.html>`_ list via ``./docs/authors.md``.
 
 
 #. Finally, submit a pull request (PR) through the GitHub website using this data::

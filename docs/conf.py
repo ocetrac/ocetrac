@@ -17,7 +17,7 @@ import sys
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 # see https://pypi.org/project/setuptools-scm/ for details
-from pkg_resources import get_distribution
+from importlib.metadata import version as _get_version, PackageNotFoundError
 
 
 print("python exec:", sys.executable)
@@ -32,11 +32,14 @@ import ocetrac  # isort:skip
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "ocetrac"
-copyright = "2025, ocetrac"
-author = "ocetrac"
-
-
-release = get_distribution("ocetrac").version
+html_title = "Ocetrac"
+html_short_title = "Ocetrac"
+copyright = "2026, Ocetrac"
+author = "Ocetrac"
+try:
+    release = _get_version("ocetrac")
+except PackageNotFoundError:
+    release = "unknown"
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
 
@@ -47,6 +50,8 @@ extensions = [
     "sphinx.ext.autodoc",
     "myst_parser",
     "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "nbsphinx",
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
@@ -67,26 +72,44 @@ source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"  # "pangeo", "alabaster"
+# Changed themes
+html_theme = "pydata_sphinx_theme"  # "pangeo", "alabaster"
 html_static_path = ["_static"]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "logo_only": True,
-    "display_version": False,
-    "style_nav_header_background": "#343131",
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url":  "https://github.com/ocetrac/ocetrac",
+            "icon": "fa-brands fa-github",
+        },
+        {
+            "name": "PyPI",
+            "url":  "https://pypi.org/project/ocetrac",
+            "icon": "fa-brands fa-python",
+        },
+    ],
+    "show_toc_level": 2,
+    "navigation_depth": 4,
+    "footer_start": ["copyright"],
+    "footer_end":   ["sphinx-version"],
+    "collapse_navigation": False,
+    "navbar_center": ["navbar-nav", "navbar-more-dropdown"],
+}
+html_sidebars = {
+    "**": ["sidebar-nav-bs"]
 }
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = "img/tranparent_logo.png"
+html_favicon = "_static/logo.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "ReadtheDocsTemplatedoc"

@@ -193,8 +193,8 @@ def track_objects_with_splitting(
 
     Containment metric
     ------------------
-    score = max(|A∩B|/|A|, |A∩B|/|B|)
-
+    score = :math:`\max(|A \cap B|/|A|, |A \cap B|/|B|)`
+ 
     Dividing by the SMALLER object means a small fragment that is fully
     contained within a large parent scores 1.0, correctly linking split
     children back to their parent event regardless of size change.

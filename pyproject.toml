@@ -1,12 +1,12 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-fallback_version = "unknown"
+fallback_version = "0.1.5"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
-write_to = "ocetrac/_ocetrac_version.py"
+write_to = "ocetrac/_version.py"
 
 [tool.interrogate]
 ignore-init-method = true

@@ -11,3 +11,4 @@ sphinx
 sphinx-copybutton
 sphinx_rtd_theme
 sphinxcontrib-srclinks
+pydata-sphinx-theme

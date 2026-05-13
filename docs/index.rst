@@ -1,15 +1,9 @@
-.. Ocetrac documentation master file, created by
-   sphinx-quickstart on Mon Jun  9 12:27:18 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Ocetrac
+Ocetrac documentation
 ===================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
 
 .. image:: https://github.com/ocetrac/ocetrac/workflows/Tests/badge.svg
    :target: https://github.com/ocetrac/ocetrac/actions
@@ -17,7 +11,7 @@ Ocetrac
 .. image:: https://codecov.io/gh/ocetrac/ocetrac/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/ocetrac/ocetrac
 
-.. image:: https://img.shields.io/badge/License-MIT-lightgray.svg?style=flt-square
+.. image:: https://img.shields.io/badge/License-MIT-lightgray.svg?style=flat-square
    :target: https://opensource.org/licenses/MIT
 
 .. image:: https://img.shields.io/pypi/v/ocetrac.svg
@@ -29,42 +23,62 @@ Ocetrac
 .. image:: https://readthedocs.org/projects/ocetrac/badge/?version=latest
    :target: https://ocetrac.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocetrac-feedstock?branchName=master
-   :target: https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=13414&branchName=maste
+.. raw:: html
+ 
+   <div style="margin-top: 0.8em;"></div>
 
+Welcome to the documentation of Ocetrac! **Ocetrac** is a Python toolkit for labelling and
+tracking the evolution of geospatial features in gridded datasets. It is designed to operate 
+lazily using Dask, enabling memory-efficient and parallelised compuation on large datasets. 
+Ocetrac provides two core tracking algorithms:
 
-|
-Ocetrac is a Python 3.6+ package designed to label and track the evolution of unique geospatial features in gridded datasets. The package is designed to accept data that have already been preprocessed, meaning that the data only contain values the user is interested in tracking. Ocetrac operates lazily with Dask so that it is memory uninhibited and fast through parallelized execution. We provide examples and demonstrate best practices as developed by the Climate Data Science Lab at Columbia University. Here you will find instructions on how to install ocetrac, use it's API, and contribute to future releases.
+- **SurfTrack** — surface features with dimensions ``(time, lat, lon)``
+- **DeepTrack** — subsurface volumetric features with dimensions ``(time, depth, lat, lon)``
 
-For recommendations or bug reports, please visit: https://github.com/ocetrac/ocetrac/issues/new
+.. raw:: html
+ 
+   <div style="margin-top: -1.5em;"></div>
+
+.. raw:: html
+ 
+   <div style="text-align: center; margin: -1.5em 0 0 0;">
+     <img id="ocetrac-hero-gif" src="" alt="Ocetrac feature animation"
+          style="max-width: 100%; height: auto; background: transparent; display: block; margin: 0 auto;" />
+     <p id="ocetrac-hero-caption"
+        style="text-align: left; font-style: italic; font-size: 1em;
+               max-width: 100%; margin: 0em auto 0 auto; padding: -0.5; color: inherit;"></p>
+   </div>
+   <script>
+     (function () {
+       var figs = [
+         { src: "_static/feature1.gif",  caption: "Animation of an event tracked using Ocetrac using data from an ensemble member of the CESM2 Large Ensemble." },
+         { src: "_static/feature38.gif",  caption: "Animation of an event tracked using Ocetrac using data from an ensemble member of the CESM2 Large Ensemble." },
+       ];
+       var chosen = figs[Math.floor(Math.random() * figs.length)];
+       document.getElementById("ocetrac-hero-gif").src = chosen.src;
+       document.getElementById("ocetrac-hero-caption").textContent = chosen.caption;
+     })();
+   </script>
+.. raw:: html
+ 
+   <div style="margin-top: 1.5em;"></div>
+
+With Ocetrac, users can track a wide range of phenomena, including marine heatwaves, cold spells, 
+phytoplankton blooms, and other time-evolving features in gridded data. The documentation includes
+everything needed to get started, from installation instructions to detailed API references and 
+usage examples.
+
+For recommendations or bug reports, please file an issue on GitHub: 
+https://github.com/ocetrac/ocetrac/issues/new. If you are interested in contributing to 
+the codebase, please see the `contributing guidelines <https://ocetrac.readthedocs.io/en/latest/contributing.html>`_.
+If you need more help with Parcels, try the `Discussions page on GitHub <https://github.com/ocetrac/ocetrac/discussions>`_. 
+
+----
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Getting started
+   :hidden:
 
-   installation
-   dependencies
-   examples
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Users Guide
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Help and Reference
-
-   SciPy 2021 Talk <https://ocetrac.github.io/scipy2021-talk/#/>
-   GitHub Repo <https://github.com/ocetrac/ocetrac>
-   api
-   authors
-   contributing
-   wishlist
-   references
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   Home <self>
+   Installation <installation>
+   Examples and Documentation <examples>
+   API Reference <api>

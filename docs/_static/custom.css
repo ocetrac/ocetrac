@@ -1,0 +1,171 @@
+:root {
+    --pst-color-primary:   #1a6ea8;
+    --pst-color-secondary: #0d4f7c;
+    --pst-color-accent:    #2ab5c8;
+}
+
+.bd-header {
+    /* background-color: #e6f3fe !important; */
+    border-bottom: 3px solid #2ab5c8;
+}
+
+.bd-sidebar .current > a {
+    color: #2ab5c8 !important;
+    font-weight: 600;
+}
+
+div.highlight {
+    border-left: 3px solid #2ab5c8;
+    border-radius: 0 4px 4px 0;
+    background-color: #f8f9fa;
+}
+
+.bd-sidebar a:hover {
+    color: #2ab5c8 !important;
+    transition: color 0.2s ease;
+}
+
+.bd-sidebar .current > a:focus {
+    outline: 2px solid #2ab5c8;
+    outline-offset: 2px;
+}
+
+/* inline code */
+code.literal {
+    background-color: #eef4fb;
+    color: #1a6ea8;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 0.9em;
+}
+
+/* footer */
+.bd-footer {
+    background-color: #ffffff;
+    color: #444444;
+    border-top: 1px solid #2ab5c8;
+}
+
+/* force the header brand text to be plain Ocetrac and bold */
+a.navbar-brand, .navbar-brand {
+    font-weight: 700 !important;
+}
+
+/* on-this-page heading */
+.bd-toc .toc-entry a {
+    color: var(--color-text-secondary);
+}
+.bd-toc .toc-entry a:hover {
+    color: #2ab5c8;
+}
+
+/* api function signatures */
+.sig-name {
+    color: #1a6ea8 !important;
+}
+
+/* admonition note */
+.admonition.note {
+    border-left: 4px solid #1a6ea8;
+    background-color: #eef4fb;
+}
+
+/* ── sidebar nav ─────────────────────────────────────────── */
+.bd-sidebar-primary .nav-link {
+    color: #444444 !important;
+    text-decoration: none !important;
+    font-weight: 400;
+}
+
+.bd-sidebar-primary .nav-link:hover {
+    color: #2ab5c8 !important;
+    text-decoration: none !important;
+    font-weight: 600;
+}
+
+.bd-sidebar-primary .current > .nav-link,
+.bd-sidebar-primary .nav-link.active {
+    color: #1a6ea8 !important;
+    font-weight: 600;
+    background-color: transparent;
+}
+
+/* section caption headers (Overview, Tutorials etc.) */
+.bd-sidebar-primary p.caption span.caption-text {
+    font-size: 1em;
+    text-transform: none;
+    color: #444444;
+}
+
+/* section navigation heading */
+.bd-sidebar-primary h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-nav-heading {
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+/* hide sidebar on index page only */
+body[data-page="index"] .bd-sidebar-primary {
+    display: none;
+}
+
+/* ── code blocks — dark mode ─────────────────────────────── */
+[data-theme="dark"] div.highlight {
+    background-color: #1a2332 !important;
+    border-left: 3px solid #2ab5c8;
+    border-radius: 0 4px 4px 0;
+}
+
+[data-theme="dark"] div.highlight pre {
+    background-color: #1a2332 !important;
+    color: #e0e0e0 !important;
+}
+
+/* inline code */
+[data-theme="dark"] code.literal {
+    background-color: #1a3550 !important;
+    color: #2ab5c8 !important;
+}
+
+/* ── code blocks — dark mode ─────────────────────────────── */
+[data-theme="dark"] div.highlight {
+    background-color: #1a2332 !important;
+    border-left: 3px solid #2ab5c8;
+    border-radius: 0 4px 4px 0;
+}
+
+[data-theme="dark"] div.highlight pre {
+    background-color: #1a2332 !important;
+    color: #e0e0e0 !important;
+}
+
+/* inline code */
+[data-theme="dark"] code.literal {
+    background-color: #1a3550 !important;
+    color: #2ab5c8 !important;
+}
+
+/* sidebar caption headers */
+[data-theme="dark"] .bd-sidebar-primary p.caption span.caption-text {
+    color: #cccccc;
+}
+/* Truncate long API entries in the on-this-page sidebar */
+.bd-toc .toc-entry a {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    display: inline-block;
+}

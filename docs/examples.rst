@@ -43,6 +43,18 @@ Tutorials
      </div>
 
      <div class="gallery-card">
+       <a href="examples/SurfTrack_tutorial_restricting_time_connectivity.html">
+        <div class="gallery-thumb">
+           <img src="_static/surftrack_preview_method2.png" alt="SurfTrack Time Restrictive Connectivity" />
+         </div>
+         <div class="gallery-body">
+           <div class="gallery-title">SurfTrack Time Restrictive Connectivity</div>
+           <div class="gallery-desc">Step-by-step walkthrough of the SurfTrack tracker from preprocessing to labelled events using temporal neighbor tracking.</div>
+         </div> 
+       </a>
+     </div>
+
+     <div class="gallery-card">
        <a href="examples/DeepTrack_tutorial.html">
          <div class="gallery-thumb">
            <img src="_static/deeptrack_preview.png" alt="DeepTrack Tutorial" />

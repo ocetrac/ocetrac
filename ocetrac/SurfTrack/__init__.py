@@ -21,9 +21,11 @@ from .tracker import (
     apply_mask,
     filter_area,
     label_3d,
+    label_temporal_neighbor,
     morphological_operations,
     wrap_labels,
 )
+
 from ..preprocessing.preprocessing import clean_binary
 
 __all__ = ["SurfTracker"]
@@ -67,6 +69,17 @@ class SurfTracker:
         ``True`` → track warm anomalies (>0).
         ``False`` → track cold anomalies (<0).
         Default ``True``.
+    method            : str
+        Labelling method. ``"3d"`` (default) runs connected-component
+        labelling on the full (time, lat, lon) volume. 
+        ``"temporal_neighbor"`` labels each 2-D frame independently
+        and only links blobs between adjacent frames if they spatially
+        overlap. A gap of even one timestep starts a new event.
+    contain_thresh    : float
+        Only used when ``method="temporal_neighbor"``. Containment
+        threshold for merging two blobs using
+        max(|A∩B|/|A|, |A∩B|/|B|) >= contain_thresh.
+        0.0 means any spatial overlap is sufficient. Default 0.0.
     """
 
     def __init__(
@@ -81,7 +94,15 @@ class SurfTracker:
         xdim:              str   = "nlon",
         ydim:              str   = "nlat",
         positive:          bool  = True,
+        method:            str         = "3d",
+        contain_thresh:    float = 0.0,
     ) -> None:
+        _valid_methods = {"3d", "temporal_neighbor"}
+        if method not in _valid_methods:
+            raise ValueError(
+                f"method={method!r} not recognised. "
+                f"Choose from {_valid_methods}."
+            )
         self.da                = da
         self.mask              = mask
         self.radius            = radius
@@ -91,6 +112,8 @@ class SurfTracker:
         self.xdim              = xdim
         self.ydim              = ydim
         self.positive          = positive
+        self.method            = method
+        self.contain_thresh = contain_thresh
 
         # Intermediate state
         self.binary_clean:    xr.DataArray | None = None
@@ -157,9 +180,10 @@ class SurfTracker:
     # ── Step 3 ───────────────────────────────────────────────────────────────
     def track(self) -> "SurfTracker":
         """
-        Apply 3-D connected-component labelling across (time, lat, lon)
-        simultaneously, then wrap labels across the date line for global
-        datasets.
+        Label connected objects and wrap across the date line.
+
+        Uses method='3d' (full volume CCL) or method='temporal_neighbor'
+        (strict adjacent-timestep linking). See class parameters for details.
 
         Outputs
         -------
@@ -167,10 +191,16 @@ class SurfTracker:
         """
         if self.binary_filtered is None:
             self.filter()
-        print("Step 3 · 3-D connected-component labelling …")
-        labels, num = label_3d(self.binary_filtered, connectivity=3)
+        print(f"Step 3 · labelling (method={self.method!r}) …")
 
-        # Wrap across date line if the dataset is global
+        if self.method == "temporal_neighbor":
+            labels, num = label_temporal_neighbor(
+                self.binary_filtered,
+                contain_thresh=self.contain_thresh,
+            )
+        else:
+            labels, num = label_3d(self.binary_filtered, connectivity=3)
+
         grid_res = abs(self.da[self.xdim][1] - self.da[self.xdim][0])
         if self.da[self.xdim][-1] - self.da[self.xdim][0] >= 360 - grid_res:
             self.labels_raw, N_final = wrap_labels(labels)
@@ -218,9 +248,10 @@ class SurfTracker:
         result.attrs["min area (effective)"]       = self.min_area
         result.attrs["percent area reject"]        = pct_reject
         result.attrs["percent area accept"]        = pct_accept
+        result.attrs["method"]          = self.method
+        result.attrs["contain_thresh"]  = self.contain_thresh
 
         self.result = result
-        print(f"    final events: {N_final}")
         return self
 
     # ── Full pipeline ─────────────────────────────────────────────────────────
@@ -283,15 +314,17 @@ class SurfTracker:
             for thr in [1, 3, 6, 12]:
                 print(f"    >= {thr:2d} ts : {(durs >= thr).sum()}")
         print()
+
         print("  Parameters:")
-        for k in ["radius", "min_area_cells", "min_size_quartile", "positive"]:
+        for k in ["radius", "min_area_cells", "min_size_quartile",
+                  "positive", "method", "contain_thresh"]:
             print(f"    {k:<20} = {getattr(self, k)}")
-        print("=" * 55)
 
     def __repr__(self) -> str:
         n = self.n_events() if self.result is not None else "(not run yet)"
         return (
             f"SurfTracker(shape={tuple(self.da.shape)}, "
             f"radius={self.radius}, "
+            f"method={self.method!r}, "
             f"events={n})"
         )

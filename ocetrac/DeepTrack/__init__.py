@@ -30,9 +30,40 @@ def _checkpoint(name: str, arr) -> None:
           f"unique IDs={len(np.unique(pos))}")
 
 
+def _wrap_longitude(arr: np.ndarray) -> np.ndarray:
+    """
+    Merge labels that straddle the date line per (t, z) slice.
+ 
+    For each (t, z), checks nlon=0 and nlon=-1 at the same nlat position.
+    If two different labels appear at the same y on opposite edges they are
+    the same physical object split by the periodic boundary — the larger ID
+    is replaced by the smaller ID everywhere in that (t, z) slice.
+ 
+    Parameters
+    ----------
+    arr : int ndarray (time, z, nlat, nlon)
+ 
+    Returns
+    -------
+    out : int ndarray — same shape, date-line objects merged
+    """
+    out = arr.copy()
+    for t in range(out.shape[0]):
+        for z in range(out.shape[1]):
+            left_col  = out[t, z, :,  0].copy()
+            right_col = out[t, z, :, -1].copy()
+            for y in range(out.shape[2]):
+                l = int(left_col[y])
+                r = int(right_col[y])
+                if l > 0 and r > 0 and l != r:
+                    old_id = max(l, r)
+                    new_id = min(l, r)
+                    out[t, z][out[t, z] == old_id] = new_id
+    return out
+
 class DeepTracker:
     """
-    End-to-end 4-D marine heatwave tracker.
+    4-D event tracker
 
     Parameters
     ----------
@@ -48,6 +79,9 @@ class DeepTracker:
     connect_z      : bool  — vertical connectivity in 3-D labelling
     positive       : bool  — True → warm anomalies, False → cold
     n_z            : int   — number of depth levels to use
+    wrap_lon       : bool  - True -> merge objects that straddle the dateline
+                     Should be True for global grids (nlon spans 360°) and
+                     False for regional domains. Default False
     """
 
     def __init__(
@@ -63,6 +97,7 @@ class DeepTracker:
         connect_z:      bool  = True,
         positive:       bool  = True,
         n_z:            int   = 20,
+        wrap_lon:       bool  = False,
     ) -> None:
         self.da             = da
         self.radius         = radius
@@ -74,13 +109,14 @@ class DeepTracker:
         self.connect_z      = connect_z
         self.positive       = positive
         self.n_z            = n_z
+        self.wrap_lon       = wrap_lon
 
         self.binary_clean:    xr.DataArray | None = None
         self.labeled_2d:      xr.DataArray | None = None
         self.labeled_3d:      np.ndarray   | None = None
         self.filtered_labels: np.ndarray   | None = None
         self.tracked:         np.ndarray   | None = None
-        self.origin_map:      dict | None         = None
+        self.origin_map:      dict         | None = None
         self.result:          xr.DataArray | None = None
 
     # ── Step 1 ───────────────────────────────────────────────────────────────
@@ -97,11 +133,29 @@ class DeepTracker:
 
     # ── Step 2 ───────────────────────────────────────────────────────────────
     def label(self) -> "DeepTracker":
-        """Label each (t, z) slice with 2-D connected components."""
+        """
+        Label each (t, z) slice with 2-D connected components, then
+        apply longitude wrapping so objects that straddle the date line
+        are merged before area filtering
+        """
         if self.binary_clean is None:
             self.clean()
         print("Step 2 · 2-D connected-component labelling …")
         self.labeled_2d = label_2d_stack(self.binary_clean).compute()
+
+        if self.wrap_lon:
+            print("Step 2b · 2-D longitude wrap")
+            n_before = len(np.unique(self.labeled_2d.values[self.labeled_2d.values > 0]))
+            wrapped  = _wrap_longitude(self.labeled_2d.values)
+            n_after  = len(np.unique(wrapped[wrapped > 0]))
+            print(f"    merged {n_before - n_after} date-line objects  "
+                  f"({n_before} → {n_after})")
+            self.labeled_2d = xr.DataArray(
+                wrapped,
+                dims   = self.labeled_2d.dims,
+                coords = self.labeled_2d.coords,
+            )
+            
         n_surf = [len(np.unique(self.labeled_2d.values[t, 0])) - 1
                   for t in range(self.labeled_2d.shape[0])]
         print(f"    surface blobs — mean={np.mean(n_surf):.1f}  "
@@ -110,7 +164,12 @@ class DeepTracker:
 
     # ── Step 3 ───────────────────────────────────────────────────────────────
     def connect_depth(self) -> "DeepTracker":
-        """Area filter → relabel → 3-D depth connectivity."""
+        """
+        Area filter → relabel → 3-D depth connectivity. Then longitude wrap.
+        Longitude wrap is applied after 3-D labelling so that any objects
+        reconnected through depth are also correctly merged across the dateline 
+        before the global volume filter runs.
+        """
         if self.labeled_2d is None:
             self.label()
 
@@ -140,6 +199,20 @@ class DeepTracker:
         struct = make_anisotropic_struct(connect_xy=True, connect_z=self.connect_z)
         self.labeled_3d = build_3d_objects(relabeled_np, struct)
 
+        if self.wrap_lon:
+            print("Step 3c · 3-D longitude wrap")
+            n_before_wrap = sum(
+                len(np.unique(self.labeled_3d[t][self.labeled_3d[t] > 0]))
+                for t in range(self.labeled_3d.shape[0])
+            )
+            self.labeled_3d = _wrap_longitude(self.labeled_3d)
+            n_after_wrap = sum(
+                len(np.unique(self.labeled_3d[t][self.labeled_3d[t] > 0]))
+                for t in range(self.labeled_3d.shape[0])
+            )
+            print(f"    merged {n_before_wrap - n_after_wrap} date-line objects  "
+                  f"({n_before_wrap} → {n_after_wrap})")
+            
         n_3d = [len(np.unique(self.labeled_3d[t][self.labeled_3d[t] > 0]))
                 for t in range(self.labeled_3d.shape[0])]
         print(f"    3-D objects/timestep — mean={np.mean(n_3d):.1f}  "
@@ -271,7 +344,7 @@ class DeepTracker:
         print()
         print("  Parameters:")
         for k in ["radius", "min_area_cells", "min_quantile",
-                  "frac_filter", "contain_thresh", "alpha", "connect_z"]:
+                  "frac_filter", "contain_thresh", "alpha", "connect_z", "wrap_lon"]:
             print(f"    {k:<16} = {getattr(self, k)}")
         print("=" * 55)
 
@@ -281,5 +354,6 @@ class DeepTracker:
             f"DeepTracker(shape={tuple(self.da.shape)}, "
             f"radius={self.radius}, "
             f"contain_thresh={self.contain_thresh}, "
+            f"wrap_lon={self.wrap_lon}, "
             f"events={n})"
         )

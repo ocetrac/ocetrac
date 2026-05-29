@@ -16,8 +16,7 @@ import xarray as xr
 
 def compute_dask_quantile(anom_data: xr.DataArray, q: float = 0.9) -> xr.DataArray:
     """
-    Compute a per-grid-cell quantile over the time axis using Dask's
-    parallel percentile algorithm.
+    Compute a per-grid-cell quantile over the time axis.
 
     Parameters
     ----------
@@ -28,13 +27,8 @@ def compute_dask_quantile(anom_data: xr.DataArray, q: float = 0.9) -> xr.DataArr
     -------
     DataArray with the time dimension removed.
     """
-    dask_array     = anom_data.data
-    quantile_array = da.percentile(dask_array, q * 100, axis=0)
-    return xr.DataArray(
-        quantile_array,
-        dims=anom_data.dims[1:],
-        coords={k: v for k, v in anom_data.coords.items() if k != "time"},
-    )
+    return anom_data.quantile(q, dim="time").drop_vars("quantile")
+
 
 
 def get_xarray_memory_usage() -> pd.DataFrame:

@@ -4,12 +4,14 @@
 """
 Tests for ocetrac.SurfTrack.
 
-Mirrors the structure of test_model.py (the SurfTrack original tests)
-and additionally covers the three changes made in this refactor:
+Covers the full pipeline plus four specific changes made during refactoring:
 
   Change 1 — min_area_cells : absolute floor for area filtering.
   Change 2 — relabelling loop : NaN cells must not be corrupted.
   Change 3 — allow_rechunk=True : spatially chunked Dask arrays must work.
+  Change 4 - contain_thresh edge case:
+                0.0  any shared pixel merges blobs (most permissive)
+                1.0  one blob must be fully contained in the other (strictest)
 
 Run with:
     python -m pytest tests/test_surftrack.py -v
@@ -29,20 +31,36 @@ from ocetrac.SurfTrack.tracker import (
     apply_mask,
     filter_area,
     label_3d,
+    label_temporal_neighbor,
     morphological_operations,
     wrap_labels,
 )
 
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def _make_da(frames, xdim="lon", ydim="lat"):
+    """Stack a list of 2-D arrays into a (time, ydim, xdim) DataArray."""
+    arr = np.stack(frames, axis=0).astype(float)
+    T, Y, X = arr.shape
+    return xr.DataArray(
+        arr,
+        dims=["time", ydim, xdim],
+        coords={
+            "time": np.arange(T),
+            ydim:   np.arange(Y),
+            xdim:   np.arange(X),
+        },
+    )
 
 # ── shared fixture ────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def example_data():
     """
-    Synthetic 3-D (time, lat, lon) dataset with a few Gaussian warm blobs.
-
+    Synthetic (time, lat, lon) dataset built from Gaussian blobs.
     Two blobs straddle the date line to exercise the wrap logic.
-    Returns (Anom, mask) matching the interface expected by SurfTracker.
+    Returns (Anom, mask) as expected by SurfTracker.
     """
     x0    = [180, 225, 360, 80, 1, 360, 1]
     y0    = [0,   20, -50,  40, -50, 40, 40]
@@ -85,15 +103,75 @@ def example_data():
     return Anom, mask
 
 
-# ── SurfTracker.run — parametrized ────────────────────────────────────────────
+# ── contain_thresh tests ──────────────────────────────────────────────────
 
-@pytest.mark.parametrize("radius", [8, 10])
-@pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
+@pytest.fixture
+def single_pixel_overlap():
+    """
+    Two 2x2 blobs that share one column.
+ 
+        t=0  cols 1-2  (4 cells)
+        t=1  cols 2-3  (4 cells)
+ 
+    Overlap = 2 cells, so max(|A∩B|/|A|, |A∩B|/|B|) = 0.5 exactly.
+    Merges at thresh <= 0.5, stays separate at thresh > 0.5.
+    """
+    frame0=np.zeros((5,6))
+    frame0[1:3,1:3] = 1
+
+    frame1=np.zeros((5,6))
+    frame1[1:3,2:4]=1
+    return _make_da([frame0, frame1])
+
+@pytest.fixture
+def full_containment():
+    """
+    Small blob at t=1 sits entirely inside larger blob at t=0.
+ 
+        t=0  5x5 square (25 cells)
+        t=1  3x3 square centred inside t=0 (9 cells)
+ 
+    |A∩B|/|B| = 9/9 = 1.0, so max containment = 1.0.
+    Merges at any thresh including 1.0.
+    """
+    frame0=np.zeros((10,10))
+    frame0[2:7,2:7]=1
+
+    frame1=np.zeros((10,10))
+    frame1[3:6,3:6]=1
+    return _make_da([frame0, frame1])
+
+@pytest.fixture
+def no_overlap():
+    """Two blobs with zero shared pixels."""
+    f0 = np.zeros((5, 10)); f0[1:4, 1:4] = 1
+    f1 = np.zeros((5, 10)); f1[1:4, 6:9] = 1
+    return _make_da([f0, f1])
+@pytest.fixture
+def three_frames_chain():
+    """
+    A 2x2 blob shifts one column right each timestep.
+    Adjacent-frame containment = 0.5, so:
+        thresh=0.0  -> all three frames are one event
+        thresh=1.0  -> each frame is its own event
+    """
+    frames = []
+    for col_start in [1, 2, 3]:
+        f = np.zeros((5, 8))
+        f[1:3, col_start:col_start + 2] = 1   # 2×2 = 4 cells
+        frames.append(f)
+    return _make_da(frames)
+
+# ── SurfTracker.run — across both methods ────────────────────────────────────────────
+
+@pytest.mark.parametrize("method", ["3d", "temporal_neighbor"])
 @pytest.mark.parametrize("positive", [True, False])
-def test_run(example_data, radius, min_size_quartile, positive):
+@pytest.mark.parametrize("min_size_quartile", [0.75, 0.80])
+@pytest.mark.parametrize("radius", [8, 10])
+def test_run(example_data, method, radius, min_size_quartile, positive):
     """
     Full pipeline runs without error and percent_area sums to 1.0.
-    Mirrors test_track from the original test suite.
+    Parametrized over both labelling methods.
     """
     Anom, mask = example_data
     if not positive:
@@ -108,13 +186,16 @@ def test_run(example_data, radius, min_size_quartile, positive):
         xdim              = "lon",
         ydim              = "lat",
         positive          = positive,
+        method            = method,
+        contain_thresh    = 0.0,
     )
     result = tracker.run()
 
     assert (
         result.attrs["percent area reject"] + result.attrs["percent area accept"]
     ) == pytest.approx(1.0)
-
+    assert result.attrs["method"] == method
+    
     if positive:
         assert Anom.sum() >= 0
     else:
@@ -124,13 +205,9 @@ def test_run(example_data, radius, min_size_quartile, positive):
 # ── morphological_operations ─────────────────────────────────────────────────
 
 def test_morphological_operations(example_data):
-    """
-    Binary output has correct shape; Dask array is returned for chunked input.
-    Change 3: spatially chunked input must not raise ValueError.
-    """
+    """Output shape matches input; chunked input returns a Dask array."""
     Anom, _ = example_data
 
-    # Test with spatial chunking — Change 3 (allow_rechunk=True)
     out = morphological_operations(
         Anom.chunk({"time": 1, "lat": 45, "lon": 90}),
         radius=8, xdim="lon", ydim="lat", positive=True,
@@ -138,7 +215,6 @@ def test_morphological_operations(example_data):
     assert out.shape == Anom.shape
     assert isinstance(out.data, dsa.Array)
 
-    # Test without chunking
     out_np = morphological_operations(Anom, radius=8, xdim="lon", ydim="lat")
     assert out_np.shape == Anom.shape
 
@@ -181,12 +257,7 @@ def test_filter_area_returns_correct_types(example_data):
 
 
 def test_filter_area_absolute_floor(example_data):
-    """
-    Change 1 — min_area_cells absolute floor.
-
-    When min_area_cells is set very high, more objects are removed than the
-    percentile alone would remove.
-    """
+    """Change 1 — a high min_area_cells removes more objects than the percentile alone."""
     Anom, mask = example_data
     binary = morphological_operations(Anom, radius=8, xdim="lon", ydim="lat")
     masked = apply_mask(binary, mask.broadcast_like(binary))
@@ -208,13 +279,7 @@ def test_filter_area_absolute_floor(example_data):
 
 
 def test_filter_area_threshold_is_max_of_floor_and_percentile():
-    """
-    Change 1 — effective threshold = max(min_area_cells, percentile).
-
-    Build a case where all objects have area ~100.  With min_area_cells=200
-    ALL objects should be removed even if min_size_quartile=0.
-    """
-    # One small blob per timestep, all size ~25 cells
+    """Change 1 — when min_area_cells >> blob size, everything is removed."""
     data = np.zeros((4, 20, 20))
     data[:, 8:13, 8:13] = 1.0
     da   = xr.DataArray(data, dims=["time","lat","lon"],
@@ -230,18 +295,11 @@ def test_filter_area_threshold_is_max_of_floor_and_percentile():
         masked, xdim="lon", ydim="lat",
         min_size_quartile=0.0, min_area_cells=9999,
     )
-    # min_area_cells >> blob size → everything removed
     assert (labels_out.values == 1).sum() == 0
 
 
 def test_filter_area_nan_not_corrupted():
-    """
-    Change 2 — relabelling loop fix.
-
-    NaN cells must remain NaN (not become large integers) after the
-    relabelling step that makes labels consecutive across timesteps.
-    """
-    # Blob at t=0, nothing at t=1 (NaN), blob at t=2
+    """Change 2 — NaN cells must stay 0/1 and never become large integers."""
     data = np.full((3, 20, 20), np.nan)
     data[0, 8:13, 8:13] = 1.0
     data[2, 8:13, 8:13] = 1.0
@@ -259,7 +317,6 @@ def test_filter_area_nan_not_corrupted():
         masked, xdim="lon", ydim="lat",
         min_size_quartile=0.0, min_area_cells=1,
     )
-    # binary_labels should be 0 or 1 — never a large integer from NaN corruption
     unique_vals = np.unique(binary_labels.values)
     assert set(unique_vals).issubset({0.0, 1.0}), \
         f"Unexpected values after relabelling: {unique_vals}"
@@ -268,7 +325,7 @@ def test_filter_area_nan_not_corrupted():
 # ── label_3d ─────────────────────────────────────────────────────────────────
 
 def test_label_3d_shape(example_data):
-    """Output shape matches input."""
+    """label_3d output shape matches input shape."""
     Anom, mask = example_data
     binary = morphological_operations(Anom, radius=8, xdim="lon", ydim="lat")
     masked = apply_mask(binary, mask.broadcast_like(binary))
@@ -282,7 +339,7 @@ def test_label_3d_shape(example_data):
 
 
 def test_label_3d_background_zero(example_data):
-    """Background (non-event) cells are labelled 0."""
+    """Cells that are 0 in the binary input must be 0 in the label output."""
     Anom, mask = example_data
     binary = morphological_operations(Anom, radius=8, xdim="lon", ydim="lat")
     masked = apply_mask(binary, mask.broadcast_like(binary))
@@ -298,10 +355,7 @@ def test_label_3d_background_zero(example_data):
 # ── wrap_labels ───────────────────────────────────────────────────────────────
 
 def test_wrap_labels_reduces_count(example_data):
-    """
-    Wrapping merges date-line-straddling objects → final count <= initial.
-    Mirrors test_wrap from the original suite.
-    """
+    """Wrapping merges date-line objects so the final count is <= the initial count."""
     Anom, mask = example_data
     binary = morphological_operations(Anom, radius=8, xdim="lon", ydim="lat")
     masked = apply_mask(binary, mask.broadcast_like(binary))
@@ -316,139 +370,321 @@ def test_wrap_labels_reduces_count(example_data):
 
 
 def test_wrap_labels_consecutive():
-    """After wrapping, labels are consecutive integers starting at 0."""
+    """Labels after wrapping are consecutive integers starting at 0."""
     arr = np.array([[[0, 1, 2], [3, 4, 5]]])
     wrapped, N = wrap_labels(arr.copy())
     unique = np.unique(wrapped)
     assert list(unique) == list(range(N + 1))
 
+# ── label_temporal_neighbor - contain_thresh = 0.0 ───────────────────────────────────────────────────────────────
 
-# ── SurfTracker integration ───────────────────────────────────────────────────
+class TestContainThresh0:
+    """thresh=0.0"""
+ 
+    def test_partial_overlap_merges(self, single_pixel_overlap):
+        # max containment = 0.5 >= 0.0, so the two blobs should merge
+        _, n = label_temporal_neighbor(single_pixel_overlap, contain_thresh=0.0)
+        assert n == 1, f"Expected 1 event, got {n}"
+ 
+    def test_no_overlap_stays_separate(self, no_overlap):
+        # zero shared pixels — cannot merge regardless of thresh
+        _, n = label_temporal_neighbor(no_overlap, contain_thresh=0.0)
+        assert n == 2, f"Expected 2 events, got {n}"
+ 
+    def test_chain_is_one_event(self, three_frames_chain):
+        # each adjacent pair overlaps, so all three frames chain into one event
+        _, n = label_temporal_neighbor(three_frames_chain, contain_thresh=0.0)
+        assert n == 1, f"Expected 1 chained event, got {n}"
+ 
+    def test_full_containment_merges(self, full_containment):
+        # full containment trivially satisfies thresh=0.0
+        _, n = label_temporal_neighbor(full_containment, contain_thresh=0.0)
+        assert n == 1, f"Expected 1 event, got {n}"
+ 
+    def test_background_stays_zero(self, single_pixel_overlap):
+        # labelled cells get a positive integer; background stays 0
+        labels, _ = label_temporal_neighbor(single_pixel_overlap, contain_thresh=0.0)
+        assert (labels[single_pixel_overlap.values > 0] > 0).all()
+        assert (labels[single_pixel_overlap.values == 0] == 0).all()
 
+# ── label_temporal_neighbor - contain_thresh = 1.0 ───────────────────────────────────────────────────────────────
+
+class TestContainThresh1:
+    """thresh=1.0"""
+ 
+    def test_partial_overlap_stays_separate(self, single_pixel_overlap):
+        # max containment = 0.5 < 1.0, so blobs stay separate
+        labels, n = label_temporal_neighbor(single_pixel_overlap, contain_thresh=1.0)
+        assert n == 2, f"Expected 2 separate events, got {n}"
+ 
+    def test_full_containment_merges(self, full_containment):
+        # max containment = 1.0, threshold is exactly met — should merge
+        labels, n = label_temporal_neighbor(full_containment, contain_thresh=1.0)
+        assert n == 1, f"Expected 1 event (full containment), got {n}"
+ 
+    def test_no_overlap_stays_separate(self, no_overlap):
+        labels, n = label_temporal_neighbor(no_overlap, contain_thresh=1.0)
+        assert n == 2, f"Expected 2 events, got {n}"
+ 
+    def test_chain_breaks_into_independent_events(self, three_frames_chain):
+        # 0.5 containment between adjacent frames < 1.0, so no linking
+        labels, n = label_temporal_neighbor(three_frames_chain, contain_thresh=1.0)
+        n_frames_with_blobs = int(
+            (three_frames_chain.values.sum(axis=(1, 2)) > 0).sum()
+        )
+        assert n == n_frames_with_blobs, (
+            f"Expected one event per frame ({n_frames_with_blobs}), got {n}"
+        )
+ 
+    def test_strictly_more_events_than_thresh0_on_partial_overlap(self, single_pixel_overlap):
+        # raising thresh can only maintain or increase the event count
+        _, n0 = label_temporal_neighbor(single_pixel_overlap, contain_thresh=0.0)
+        _, n1 = label_temporal_neighbor(single_pixel_overlap, contain_thresh=1.0)
+        assert n1 >= n0
+
+# ── label_temporal_neighbor: threshold sensitivity ──────────────────────────────────
+ 
+class TestContainThreshSweep:
+    """
+    Testing thresh from 0.0 to 1.0 and verify behaviour:
+    event count is non-decreasing as thresh increases.
+    """
+ 
+    def test_monotone_increasing_event_count(self, single_pixel_overlap):
+        thresholds = [0.0, 0.1, 0.25, 0.49, 0.50, 0.51, 0.75, 1.0]
+        counts = [
+            label_temporal_neighbor(single_pixel_overlap, contain_thresh=t)[1]
+            for t in thresholds
+        ]
+        for i in range(len(counts) - 1):
+            assert counts[i] <= counts[i + 1], (
+                f"Event count decreased from thresh={thresholds[i]} "
+                f"(n={counts[i]}) to thresh={thresholds[i+1]} (n={counts[i+1]})"
+            )
+ 
+    def test_boundary_at_exact_containment(self, single_pixel_overlap):
+        # single_pixel_overlap has max containment = 0.5 exactly
+        # thresh=0.50 satisfies >=, so should merge; 0.51 should not
+        _, n_at   = label_temporal_neighbor(single_pixel_overlap, contain_thresh=0.50)
+        _, n_just = label_temporal_neighbor(single_pixel_overlap, contain_thresh=0.51)
+        assert n_at   == 1, f"thresh=0.50: expected 1 event, got {n_at}"
+        assert n_just == 2, f"thresh=0.51: expected 2 events, got {n_just}"
+
+# ── SurfTracker integration: contain_thresh via the full pipeline ─────────────
+class TestSurfTrackerContainThresh:
+    """
+    Confirms contain_thresh propagates from constructor through track()
+    and into result.attrs, and that method='3d' is unaffected by it.
+    """
+ 
+    def _blob_pair(self, overlap_cols=1):
+        """
+        Two-frame dataset. overlap_cols controls how many columns are shared.
+            0  -> no overlap
+            2  -> 50% containment
+            4  -> identical frames, 100% containment
+        """
+        Y, X = 20, 40
+        lat, lon = np.arange(Y, dtype=float), np.arange(X, dtype=float)
+ 
+        f0 = np.zeros((Y, X)); f0[8:12, 5:9] = 1
+        f1 = np.zeros((Y, X)); f1[8:12, 9 - overlap_cols:13 - overlap_cols] = 1
+ 
+        da = xr.DataArray(
+            np.stack([f0, f1]),
+            dims=["time", "lat", "lon"],
+            coords={"time": [0, 1], "lat": lat, "lon": lon},
+        )
+        mask = xr.DataArray(np.ones((Y, X)), dims=["lat", "lon"],
+                            coords={"lat": lat, "lon": lon})
+        return da, mask
+ 
+    def _tracker(self, da, mask, method="temporal_neighbor", contain_thresh=0.0):
+        return SurfTracker(
+            da, mask,
+            method=method, contain_thresh=contain_thresh,
+            min_area_cells=1, min_size_quartile=0.0,
+            xdim="lon", ydim="lat", radius=1,
+        )
+ 
+    def test_permissive_thresh_merges_more_than_strict(self):
+        da, mask = self._blob_pair(overlap_cols=1)
+        t0 = self._tracker(da, mask, contain_thresh=0.0)
+        t1 = self._tracker(da, mask, contain_thresh=1.0)
+        t0.run(); t1.run()
+        assert t0.n_events() <= t1.n_events()
+ 
+    def test_contain_thresh_written_to_attrs(self):
+        da, mask = self._blob_pair(overlap_cols=2)
+        for thresh in (0.0, 1.0):
+            result = self._tracker(da, mask, contain_thresh=thresh).run()
+            assert result.attrs["contain_thresh"] == thresh
+ 
+    def test_no_overlap_always_two_events(self):
+        da, mask = self._blob_pair(overlap_cols=0)
+        for thresh in (0.0, 1.0):
+            t = self._tracker(da, mask, contain_thresh=thresh)
+            t.run()
+            assert t.n_events() == 2
+ 
+    def test_full_overlap_always_one_event(self):
+        da, mask = self._blob_pair(overlap_cols=4)
+        for thresh in (0.0, 1.0):
+            t = self._tracker(da, mask, contain_thresh=thresh)
+            t.run()
+            assert t.n_events() == 1
+ 
+    def test_method_3d_unaffected_by_contain_thresh(self):
+        # contain_thresh is silently ignored for method='3d' — should not error
+        da, mask = self._blob_pair(overlap_cols=2)
+        for thresh in (0.0, 1.0):
+            result = self._tracker(da, mask, method="3d", contain_thresh=thresh).run()
+            assert isinstance(result, xr.DataArray)
+            assert result.attrs["method"] == "3d"
+ 
+    def test_both_methods_agree_on_single_persistent_blob(self):
+        # identical frames: one blob that never splits — both methods should give 1 event
+        da, mask = self._blob_pair(overlap_cols=4)
+        t_3d = self._tracker(da, mask, method="3d",               contain_thresh=0.0)
+        t_tn = self._tracker(da, mask, method="temporal_neighbor", contain_thresh=0.0)
+        t_3d.run(); t_tn.run()
+        assert t_3d.n_events() == t_tn.n_events() == 1
+ 
+    def test_invalid_method_raises_on_init(self):
+        da, mask = self._blob_pair()
+        with pytest.raises(ValueError, match="method"):
+            SurfTracker(da, mask, method="not_a_method", xdim="lon", ydim="lat")
+
+# ── SurfTracker ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("method", ["3d", "temporal_neighbor"])
 class TestSurfTrackerIntegration:
+    """
+    End-to-end pipeline tests run against both labelling methods.
+    contain_thresh=0.0 throughout, testing the method, not the threshold.
+    """
 
-    # dim names used in the synthetic data
-    _xdim = 'lon'
-    _ydim = 'lat'
-
-    def _tracker(self, T=4, positive=True):
+    def _tracker_data(self, T=4):
         lon = np.arange(0, 360) + 0.5
         lat = np.arange(-90, 90) + 0.5
         x, y = np.meshgrid(lon, lat)
-        blob = np.exp(-((x - 180) ** 2 + (y - 0) ** 2) / (2 * 20 ** 2))
-        data = np.stack([blob * 2 - 0.5] * T, axis=0)
-        data = np.where(data > 0, data, 0)
-        da = xr.DataArray(data, dims=["time","lat","lon"],
-                          coords={"time": np.arange(T),
-                                  "lat": lat, "lon": lon})
+        blob = np.exp(-((x - 180) ** 2 + y ** 2) / (2 * 20 ** 2))
+        data = np.where(blob * 2 - 0.5 > 0, blob * 2 - 0.5, 0)
+        data = np.stack([data] * T, axis=0)
+        da   = xr.DataArray(data, dims=["time", "lat", "lon"],
+                            coords={"time": np.arange(T), "lat": lat, "lon": lon})
         mask = xr.DataArray(np.ones((T, 180, 360)), dims=da.dims, coords=da.coords)
         return da, mask
-
-    def test_run_returns_dataarray(self):
-        da, mask = self._tracker()
-        result = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                             min_area_cells=10, xdim='lon', ydim='lat').run()
+ 
+    def _make_tracker(self, da, mask, method, **kwargs):
+        return SurfTracker(
+            da, mask,
+            radius            = kwargs.get("radius", 5),
+            min_size_quartile = kwargs.get("min_size_quartile", 0.5),
+            min_area_cells    = kwargs.get("min_area_cells", 10),
+            xdim              = "lon",
+            ydim              = "lat",
+            method            = method,
+            contain_thresh    = 0.0,
+        )
+ 
+    def test_run_returns_dataarray(self, method):
+        da, mask = self._tracker_data()
+        result = self._make_tracker(da, mask, method).run()
         assert isinstance(result, xr.DataArray)
         assert result.shape == da.shape
-
-    def test_result_background_is_nan(self):
-        da, mask = self._tracker()
-        result = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                             min_area_cells=10, xdim='lon', ydim='lat').run()
-        # No zeros — background should be NaN
+ 
+    def test_result_background_is_nan(self, method):
+        da, mask = self._tracker_data()
+        result = self._make_tracker(da, mask, method).run()
         assert not (result.values == 0).any()
-
-    def test_percent_area_sums_to_one(self):
-        da, mask = self._tracker()
-        result = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                             min_area_cells=10, xdim='lon', ydim='lat').run()
-        total = result.attrs["percent area reject"] + result.attrs["percent area accept"]
+ 
+    def test_percent_area_sums_to_one(self, method):
+        da, mask = self._tracker_data()
+        result = self._make_tracker(da, mask, method).run()
+        total = (result.attrs["percent area reject"]
+                 + result.attrs["percent area accept"])
         assert total == pytest.approx(1.0)
-
-    def test_n_events_positive(self):
-        da, mask = self._tracker()
-        t = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                        min_area_cells=10, xdim='lon', ydim='lat')
+ 
+    def test_method_stored_in_attrs(self, method):
+        """result.attrs['method'] must match the method used."""
+        da, mask = self._tracker_data()
+        result = self._make_tracker(da, mask, method).run()
+        assert result.attrs["method"] == method
+ 
+    def test_n_events_positive(self, method):
+        da, mask = self._tracker_data()
+        t = self._make_tracker(da, mask, method)
         t.run()
         assert t.n_events() >= 1
-
-    def test_event_duration_dict(self):
-        da, mask = self._tracker(T=5)
-        t = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                        min_area_cells=10, xdim='lon', ydim='lat')
+ 
+    def test_event_duration_dict(self, method):
+        da, mask = self._tracker_data(T=5)
+        t = self._make_tracker(da, mask, method)
         t.run()
         durations = t.event_duration()
         assert isinstance(durations, dict)
         for eid, dur in durations.items():
             assert isinstance(eid, int) and dur > 0
-
-    def test_summary_runs(self):
-        da, mask = self._tracker()
-        t = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                        min_area_cells=10, xdim='lon', ydim='lat')
+ 
+    def test_summary_runs(self, method):
+        da, mask = self._tracker_data()
+        t = self._make_tracker(da, mask, method)
         t.run()
         t.summary()   # should not raise
-
-    def test_repr_before_run(self):
-        da, mask = self._tracker()
-        assert "(not run yet)" in repr(SurfTracker(da, mask, xdim='lon', ydim='lat'))
-
-    def test_postprocess_raises_without_track(self):
-        da, mask = self._tracker()
+ 
+    def test_repr_before_run(self, method):
+        da, mask = self._tracker_data()
+        assert "(not run yet)" in repr(
+            SurfTracker(da, mask, xdim="lon", ydim="lat", method=method)
+        )
+ 
+    def test_postprocess_raises_without_track(self, method):
+        da, mask = self._tracker_data()
         with pytest.raises(RuntimeError, match="track"):
-            SurfTracker(da, mask, xdim='lon', ydim='lat').postprocess()
-
-    def test_chaining_returns_self(self):
-        da, mask = self._tracker()
-        t = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                        min_area_cells=10, xdim='lon', ydim='lat')
+            SurfTracker(da, mask, xdim="lon", ydim="lat", method=method).postprocess()
+ 
+    def test_chaining_returns_self(self, method):
+        da, mask = self._tracker_data()
+        t = self._make_tracker(da, mask, method)
         assert t.clean()  is t
         assert t.filter() is t
         assert t.track()  is t
-
-    def test_step_by_step_matches_run(self):
+ 
+    def test_step_by_step_matches_run(self, method):
         """Running steps individually must produce the same result as .run()."""
-        da, mask = self._tracker()
-
-        r1 = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                         min_area_cells=10, xdim='lon', ydim='lat').run()
-
-        t2 = SurfTracker(da, mask, radius=5, min_size_quartile=0.5,
-                         min_area_cells=10, xdim='lon', ydim='lat')
+        da, mask = self._tracker_data()
+ 
+        r1 = self._make_tracker(da, mask, method).run()
+ 
+        t2 = self._make_tracker(da, mask, method)
         t2.clean().filter().track().postprocess()
         r2 = t2.result
-
+ 
         np.testing.assert_array_equal(
             np.nan_to_num(r1.values),
             np.nan_to_num(r2.values),
         )
-
-    def test_min_area_cells_removes_small_events(self):
-        """
-        Change 1 — a high min_area_cells should remove small objects even
-        when the percentile threshold would keep them.
-        """
-        da, mask = self._tracker()
-        t_high = SurfTracker(da, mask, radius=5, min_size_quartile=0.0,
-                              min_area_cells=999999, xdim='lon', ydim='lat')
+ 
+    def test_min_area_cells_removes_small_events(self, method):
+        """Change 1 — high min_area_cells removes small objects the percentile would keep."""
+        da, mask = self._tracker_data()
+ 
+        t_high = self._make_tracker(da, mask, method,
+                                    min_size_quartile=0.0, min_area_cells=999999)
+        t_low  = self._make_tracker(da, mask, method,
+                                    min_size_quartile=0.0, min_area_cells=1)
         result_high = t_high.run()
-
-        t_low = SurfTracker(da, mask, radius=5, min_size_quartile=0.0,
-                             min_area_cells=1, xdim='lon', ydim='lat')
-        result_low = t_low.run()
-
+        result_low  = t_low.run()
+ 
         n_high = len(np.unique(result_high.values[~np.isnan(result_high.values)]))
         n_low  = len(np.unique(result_low.values[~np.isnan(result_low.values)]))
         assert n_high <= n_low
-
-    def test_chunked_input_works(self):
-        """
-        Change 3 — spatially chunked Dask arrays must not raise ValueError
-        in morphological_operations (allow_rechunk=True fix).
-        """
-        da, mask = self._tracker()
+ 
+    def test_chunked_input_works(self, method):
+        """Change 3 — spatially chunked Dask input must not raise in morphological_operations."""
+        da, mask = self._tracker_data()
         da_chunked = da.chunk({"time": 1, "lat": 45, "lon": 90})
-        result = SurfTracker(da_chunked, mask, radius=5,
-                             min_size_quartile=0.5, min_area_cells=10, xdim='lon', ydim='lat').run()
+        result = self._make_tracker(da_chunked, mask, method).run()
         assert result is not None
         

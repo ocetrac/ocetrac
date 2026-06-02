@@ -24,6 +24,7 @@ Core algorithms:
   Masking                  apply_mask
   Area filtering           filter_area
   3-D labelling            label_3d
+  Contain thresh labelling label_temporal_neighbor
   Date-line wrapping       wrap_labels
 """
 from __future__ import annotations
@@ -335,3 +336,103 @@ def _label_either(data: np.ndarray | dsa.Array, **kwargs):
     else:
         label_func = label_np
     return label_func(data, **kwargs)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Temporal-neighbour labelling (Issue #76)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def label_temporal_neighbor(
+    binary_labels,
+    contain_thresh=0.0,
+):
+    """
+    Connected-component labelling with strict temporal adjacency.
+    
+    An object at time t can only link to objects at t-1 and t+1.
+    A gap of even one timestep produces a new event.
+    
+    Parameters
+    ----------
+    binary_labels  : array-like (time, lat, lon)
+    contain_thresh : float in [0, 1], default 0.0
+        Containment threshold for merging two blobs.
+        max(|A∩B|/|A|, |A∩B|/|B|) >= contain_thresh
+        0.0 means any spatial overlap is sufficient.
+    
+    Returns
+    -------
+    labels : ndarray (time, lat, lon)  integer event labels, 0 = background
+    n      : int  number of unique events
+    """
+    if not (0.0 <= contain_thresh <= 1.0):
+        raise ValueError(
+            f"contain_thresh must be in [0, 1], got {contain_thresh}"
+        )
+
+    data = np.array(binary_labels)
+    if data.ndim != 3:
+        raise ValueError(
+            f"binary_labels must be 3-D (time, lat, lon), got shape {data.shape}"
+        )
+
+    T, Y, X = data.shape
+
+    # Label each 2-D slice independently, offsetting IDs so they are
+    # globally unique across all timesteps
+    frame_labels = np.zeros_like(data, dtype=np.int64)
+    offset = 0
+    for t in range(T):
+        lbl = label_np(data[t], background=0)
+        frame_labels[t] = np.where(lbl > 0, lbl + offset, 0)
+        offset += lbl.max()
+
+    # Precompute blob sizes if using fractional overlap
+    blob_sizes = {}
+    for t in range(T):
+        for blob_id in np.unique(frame_labels[t]):
+            if blob_id > 0:
+                blob_sizes[int(blob_id)] = int((frame_labels[t] == blob_id).sum())
+
+    def _passes_contain(a, b, n_shared):
+        if contain_thresh == 0.0:
+            return n_shared > 0
+        score = max(n_shared / blob_sizes[a], n_shared / blob_sizes[b])
+        return score >= contain_thresh
+
+    # Union-find
+    parent = list(range(offset + 1))
+
+    def _find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def _union(a, b):
+        ra, rb = _find(a), _find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    for t in range(T - 1):
+        overlap = (frame_labels[t] > 0) & (frame_labels[t + 1] > 0)
+        if not overlap.any():
+            continue
+        pairs = np.unique(
+            np.stack([frame_labels[t][overlap], frame_labels[t + 1][overlap]], axis=1),
+            axis=0,
+        )
+        for a, b in pairs:
+            a, b = int(a), int(b)
+            n_shared = int(((frame_labels[t] == a) & (frame_labels[t + 1] == b)).sum())
+            if _passes_contain(a, b, n_shared):
+                _union(a, b)
+                
+    # Remap to consecutive IDs
+    roots = np.array([_find(i) if i > 0 else 0 for i in range(offset + 1)])
+    unique_roots = np.unique(roots[roots > 0])
+    lookup = np.zeros(offset + 1, dtype=np.int64)
+    for new_id, r in enumerate(unique_roots, start=1):
+        lookup[r] = new_id
+    out = lookup[roots[frame_labels]]
+
+    return out, len(unique_roots)

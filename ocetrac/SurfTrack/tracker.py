@@ -294,7 +294,101 @@ def wrap_labels(labels: np.ndarray) -> tuple[np.ndarray, int]:
     labels_wrapped = (np.unique(labels, return_inverse=True)[1]
                       .reshape(labels.shape))
     return labels_wrapped, int(np.max(labels_wrapped))
- 
+
+def label_filter_area( # this is new
+    binary_images:    xr.DataArray,
+    xdim:             str,
+    ydim:             str,
+    min_size_quartile: float = 0.25,
+    min_area_cells:   int   = 100,
+) -> tuple[xr.DataArray, float, xr.DataArray, int]:
+    """
+    Label 2-D slices per timestep, make IDs consecutive across time,
+    wrap across the date line, then filter by object area.
+
+    Effective area threshold = max(min_area_cells, percentile(areas, q)).
+
+    Parameters
+    ----------
+    binary_images     : DataArray (time, ydim, xdim) — binary after masking
+    xdim              : str — name of the x dimension
+    ydim              : str — name of the y dimension
+    min_size_quartile : float — relative area percentile (0–1)
+    min_area_cells    : int  — absolute minimum area in grid cells
+
+    Returns
+    -------
+    area          : DataArray — voxel count per detected object
+    min_area      : float    — effective threshold applied
+    binary_labels : DataArray — binary field with only kept objects
+    N_initial     : int      — object count before area filtering
+    """
+    def _get_labels(slice_2d: np.ndarray) -> np.ndarray:
+        return _label_either(slice_2d, background=0)
+
+    labels = xr.apply_ufunc(
+        _get_labels,
+        binary_images,
+        input_core_dims=[[ydim, xdim]],
+        output_core_dims=[[ydim, xdim]],
+        output_dtypes=[binary_images.dtype],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"allow_rechunk": True},
+    )
+    labels = xr.DataArray(
+        labels, dims=binary_images.dims, coords=binary_images.coords
+    )
+    labels = labels.where(labels > 0, drop=False, other=np.nan)
+
+    # ── compute once, then offset entirely in numpy ───────────────
+    labels_np = labels.values   # single dask compute
+
+    max_id = 0
+    for i in range(1, labels_np.shape[0]):
+        max_id = int(np.nanmax([max_id, np.nanmax(labels_np[i - 1])]))
+        valid = labels_np[i] > 0
+        labels_np[i][valid] += max_id
+
+    # put back into DataArray
+    labels = xr.DataArray(
+        labels_np, dims=binary_images.dims, coords=binary_images.coords
+    )
+    labels = labels.where(labels > 0, drop=False, other=0)
+
+    labels_wrapped, N_initial = wrap_labels(np.array(labels))
+
+    props      = regionprops(labels_wrapped.astype("int"))
+    label_ids  = [p.label for p in props]
+    labelprops = xr.DataArray(label_ids, dims=["label"],
+                               coords={"label": label_ids})
+    area = xr.DataArray(
+        [p.area for p in props], dims=["label"],
+        coords={"label": labelprops},
+    )
+
+    if area.size == 0:
+        raise ValueError(
+            "No objects detected. "
+            "Try lowering radius or min_size_quartile."
+        )
+
+    pct_threshold = float(np.percentile(area, min_size_quartile * 100))
+    min_area      = float(max(min_area_cells, pct_threshold))
+    print(f"area threshold : {min_area:.0f} cells  "
+          f"(floor={min_area_cells}, "
+          f"percentile={pct_threshold:.1f})")
+
+    keep_labels   = labelprops.where(area >= min_area, drop=True)
+    keep_where    = np.isin(labels_wrapped, keep_labels)
+    out_labels    = xr.DataArray(
+        np.where(keep_where, labels_wrapped, 0),
+        dims=binary_images.dims,
+        coords=binary_images.coords,
+    )
+    binary_labels = out_labels.where(out_labels == 0, drop=False, other=1)
+
+    return area, min_area, binary_labels, N_initial
  
 # ──────────────────────────────────────────────────────────────────────────────
 # Internal helper

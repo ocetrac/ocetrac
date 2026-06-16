@@ -146,5 +146,6 @@ Tutorials
    :caption: Tutorials
 
    examples/SurfTrack_tutorial
+   examples/SurfTrack_tutorial_restricting_time_connectivity
    examples/SurfTrack_measures_tutorial
    examples/DeepTrack_tutorial

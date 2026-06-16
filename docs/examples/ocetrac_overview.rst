@@ -313,11 +313,6 @@ Key Concepts
    into the output array and extract the full spatiotemporal footprint of any individual event.
  
 **Dask integration**
-   All operations are applied lazily. The tracker builds a computation graph without 
-   executing any computation until ``.compute()`` is called or the result is written to 
-   disk. Chunking along the time dimension is recommended for optimal performance.
- 
-**Dask integration**
    All operations are applied lazily. The tracker builds a computation graph without
    executing any computation until ``.compute()`` is called or the result is written
    to disk. This allows Ocetrac to handle datasets that are larger than available memory.

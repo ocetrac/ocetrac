@@ -9,8 +9,6 @@ Overview
 --------
 
 - `Ocetrac Overview <examples/ocetrac_overview.html>`_ — Architecture, data flow, and key concepts behind SurfTrack and DeepTrack.
-- `Quickstart <examples/quickstart.html>`_ — Get up and running with SurfTrack and DeepTrack in a few lines of code.
-- `Working with output <examples/working_with_output.html>`_ — Read, analyse, plot, and animate tracked event output.
  
 Tutorials
 --------

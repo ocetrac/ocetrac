@@ -11,6 +11,11 @@ Ocetrac provides two core tracking algorithms, **DeepTrack** and **SurfTrack**.
 Both operate lazily using `Dask <https://www.dask.org>`_, enabling 
 efficient processing of large gridded datasets without loading everything into memory at once.
 
+.. figure:: /_static/ocetrac_flowchart.jpg
+   :alt: Ocetrac methods overview
+   :align: center
+   :width: 100%
+
 ----
 
 High-Level Architecture

@@ -37,8 +37,6 @@ Then install ocetrac:
 ```bash
 mamba install -c conda-forge ocetrac
 ```
-
-```
  
 **PyPI**
  

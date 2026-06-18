@@ -12,10 +12,15 @@ Both operate lazily using `Dask <https://www.dask.org>`_, enabling
 efficient processing of large gridded datasets without loading everything into memory at once.
 
 .. figure:: /_static/ocetrac_flowchart.jpg
-   :alt: Ocetrac methods overview
+   :alt: Ocetrac processing pipeline for SurfTrack and DeepTrack
    :align: center
    :width: 100%
 
+   Overview of the six-step Ocetrac processing pipeline for surface (SurfTrack) and
+   subsurface (DeepTrack) feature tracking: (1) input temperature field, (2) anomaly
+   computation, (3) feature detection, (4) morphological operations (closing and
+   opening), (5) area/volume thresholding, and (6) temporal tracking using either
+   permissive (overlap > 0) or restrictive (overlap > user-defined threshold) criteria.
 ----
 
 High-Level Architecture

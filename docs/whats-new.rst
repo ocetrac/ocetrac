@@ -25,6 +25,10 @@ commits and pull requests, see the `GitHub changelog <https://github.com/ocetrac
 
     Bug fixes
     ~~~~~~~~~
+
+v0.1.7 (18 June 2026)
+----------------------
+
 New Features
 ~~~~~~~~~~~~
  
@@ -40,7 +44,7 @@ New Features
   depth layers, anisotropic structuring element support via
   :func:`~ocetrac.DeepTrack.grid.make_anisotropic_struct`, and cell volume computation
   via :func:`~ocetrac.DeepTrack.grid.build_cell_volume`.
- 
+
 Documentation
 ~~~~~~~~~~~~~
  
